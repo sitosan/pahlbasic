@@ -6,3 +6,4 @@ Documentation read armbasic.pdf (German)
 
 Basic Examples see BasicExamples folder.
 
+NotePad++ Syntax files in NotePadpp_Syntax folder
