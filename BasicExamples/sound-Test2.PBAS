@@ -1,0 +1,14 @@
+'sound-Test2
+'dieses Kleine Programm macht einen netten Glockenklang
+'und zeigt die Wirkung der Funktion fn Fmod
+print "Zum Abbrechen, eine beliebige Taste drücken"
+set sound
+let volume = 20
+sound 0, 220 : sound 1, 330 : sound 2, 550
+do
+  for N=300 to 30 step -10
+    let A = fn Fmod(N, 5)
+    wait 50
+  next
+until buf
+sound 0, 0 : sound 1, 0 : sound 2, 0

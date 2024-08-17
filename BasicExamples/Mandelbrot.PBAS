@@ -1,0 +1,34 @@
+   800 proc Apfelmaennchen
+   900 let time = 0
+  1000 rem Mandelbrot_Set_Project
+  1010 'Quite_BASIC_Math_Project
+  1020 '________________________
+  1030 cls 1, 0
+  1050 let A = @2120 : let B = @2200
+  2010 array C(0), 0, 7, 6, 5, 14, 2, 3, 4, 16
+  2020 'L_is_the_maximum_iterations_to_try
+  2030 let L = 100
+  2040 for I=0 to 300
+  2050   for J=0 to 300
+  2060     let U = I/150-1.5
+  2070     let V = J/150-1
+  2080     let X = U
+  2090     let Y = V
+  2100     let N = 0
+  2110     'Inner_iteration_loop_starts_here
+  2120     let R = X*X
+  2130     let Q = Y*Y
+  2140     if (R+Q>4) or (N>=L) goto ->B
+  2150     let Y = 2*X*Y+V
+  2160     let X = R-Q+U
+  2170     inc N
+  2180     goto ->A
+  2190     'Compute_the_color_to_plot
+  2200     if N<10 : let C = 0
+  2205     else : let C = C(int(8*(N-10)/(L-10)))
+  2207     endif
+  2210     plot I, J, C
+  2220   next J
+  2230 next I
+  2235 print str$(time/60); " min"
+  2240 end.

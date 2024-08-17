@@ -1,0 +1,24 @@
+proc OnImpulsTest
+  cls
+  proc Eingabe
+  locate 3, 3 : input "Ihre PIN: ####", A
+  locate 10, 3 : print "Ihre Eingabe: "; str$(A, 4); 
+  if A=1234 : ' Die PIN lautet 1234
+    if sys(61)=0
+      set relay1 : '"Türöffner an Relais 1
+      on impuls 1, 5000 start Test
+      print " ist richtig, treten Sie ein.    "
+    else
+      print " ist richtig, Tür ist noch offen."
+    endif
+  else
+    print " ist falsch, kein Zutritt.       "
+  endif
+  if A=1235 then exit. : ' Die PIN zum Beenden lautet 1235
+  jmp Eingabe
+  do : until
+end.
+  
+proc Test
+   reset relay1
+end

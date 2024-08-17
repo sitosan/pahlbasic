@@ -1,0 +1,8 @@
+ 5 print "Der Test dauert ein paar Minuten und gibt die Geschwindigkeit in Zeilen pro Sekunde aus"
+10 let milli = 0
+30 for I=1 to 1000000
+40 	let J = diginp.5
+50 	let relay.1 = J
+60 	inc C
+70 next
+80 print "Speed is "; int((C * 5)/(milli/1000)); " lines per second."

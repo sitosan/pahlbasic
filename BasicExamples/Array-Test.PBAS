@@ -1,0 +1,15 @@
+proc Programm Array-Test
+  'Min,Max
+  array A(0), 9, 7, 8, 2, 13, 12, 22, 11 : 'Array mit Werten füllen
+  print "Array-Werte: ";
+  for N=0 to 7 : print A(N), : next
+  print : print
+  max A(0) to A(7), A
+  min A(0) to A(7), B
+  mean A(0) to A(7), C : ' Durchschnitt mit allen Werten
+  mean A(0) to A(7), D, 1 : ' Durchschnitt groesster Wert entfernt
+  mean A(0) to A(7), E, 2 : ' Durchschnitt kleinster Wert entfernt
+  mean A(0) to A(7), F, 3 : ' Durchschnitt groesster und kleinster Wert entfernt
+  print "max", "min", "mean", "mean1", , "mean2", , "mean3"
+  print A, B, C, D, , E, F
+end.

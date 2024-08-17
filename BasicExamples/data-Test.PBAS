@@ -1,0 +1,16 @@
+proc data-Test
+  restore "Daten"
+  read A, B, C : print A, B, C
+  call Test()
+  read D, E, F : print D, E, F
+end.
+  
+sub Test
+  read A, B, C
+  print A, B, C
+  data 55, 66, 77
+end
+  
+proc Daten
+  data 11, 12, 13, 14, 15, 16
+end

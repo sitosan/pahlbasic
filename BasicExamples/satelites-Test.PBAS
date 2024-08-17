@@ -1,0 +1,14 @@
+proc Anzahl Sateliten
+  ' GPS-Modul angeschlossen? GPS-Parsing eingeschaltet?
+  if sys(102) = 0 then print "kein GPS-Signal vorhanden" : exit.
+  if sys(28) = 0 then print "GPS-Empfänger aktiv, aber GPS-Signal (noch) nicht valide" : exit.
+  print "Anzahl Sateliten: "; fn Satelites()
+end.
+  
+include Komma.INC
+  
+function Satelites()
+  let A$ = gps$("GGA")
+  'let result = ((A$(fn Komma(A$, 7, 1)))-48)*10+(A$(fn Komma(A$, 7, 2)))-48
+  let result = val(mid fn Komma(A$, 7, 1), 2, A$)
+end

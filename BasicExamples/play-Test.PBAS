@@ -1,0 +1,28 @@
+proc Play_Test
+  restore "Datas"
+  set sound : let volume = 30 : ' Schaltet Sound ein
+  let A = fn Fmod(100, 7) : '"ein paar Obertöne hinzufügen
+  on err gosub "Error"
+  on milli 1, 250 start Play
+  do : until buf : ' auf Tastendruck warten
+  on milli 1 off
+end.
+  
+proc Error
+  restore "Datas" : '"Fängt Fehler 'no more datas' ab
+resume
+  
+proc Play
+  read A, B, C, D, E, F
+  play A, B, C, D, E, F
+end
+  
+proc Datas
+  data 55, 4, 59, 16, 63, 32
+  data 59, 4, 63, 16, 67, 32
+  data 63, 4, 67, 16, 71, 32
+  data 67, 4, 71, 16, 75, 32
+  data 63, 4, 67, 16, 71, 32
+  data 59, 4, 63, 16, 67, 32
+  data 55, 4, 59, 16, 63, 32
+end

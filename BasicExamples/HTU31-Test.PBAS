@@ -1,0 +1,17 @@
+' Test des HTU31
+' Vergleich der Werte zwischen reinem Basic und der Funktion sensor()
+config fix$=2
+print "Vergleich der Werte zwischen reinem Basic und der Funktion sensor()"
+print
+print "Basic-Werte             Funktion sensor()"
+do
+  i2c "w", 0x40, 94, 0
+  wait 100
+  i2c "r", 0x40, 0, 6
+  let A = (I(0)<<8)+I(1)
+  let B = (I(3)<<8)+I(4)
+  let T = -40+(165*(A/65535))
+  let R = 100*(B/65535)
+  print string(50, 32); chr$(13); fix$(T), fix$(R),, fix$(sensor(0)), fix$(sensor(1)); chr$(13);
+  wait 2000
+until

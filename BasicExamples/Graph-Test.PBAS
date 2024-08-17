@@ -1,0 +1,4 @@
+set sound  : draw "g"
+call Fourier(5, 4, 3, 2, 1, 1) : draw "g", 1
+call Fmod(30, 5) : draw "g", 2
+call Fmod(90, 7) : draw "g", 3

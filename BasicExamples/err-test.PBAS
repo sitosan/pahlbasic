@@ -1,0 +1,17 @@
+//Programm zur Berechnung des Reziprok-Wertes
+//Mit der Eingabe von 0 wird die Fehlerbehandlung ausgelöst
+on err gosub "Fehlerbehandlung"
+cls : locate 10, 10 : print "Programm Kehrwertberechnung startet" : wait 1500
+proc Loop
+  do
+    cls  : locate 10, 10
+    input "Eingabe : ", A : let B = 1/A : locate 11, 10 : print "Kehrwert: " ; B
+    wait 1500
+    'testweise 0 eingeben.
+  until
+end.
+  
+proc Fehlerbehandlung
+  if inkey = 3 then exit. : ' ohne diesen Ausstieg (ctrl + c) ist das Programm kaum abzubrechen
+  locate 11, 10 : print "Fehler" : wait 2000
+resume "Loop"

@@ -1,0 +1,16 @@
+   1 let time = 0 : let M = 64
+   2 for J=-20 to 20
+   4   for I=-40 to 40
+   5     let V = J*4 : let U = I*3-40 : let X = U : let Y = V : let N = 0
+   6     let R = X*X/M : let Q = Y*Y/M
+   7     if R+Q>256 goto 11
+   8     if N>=64 goto 10
+   9     let Y = 2*X*Y/M+V : let X = R-Q+U : inc N : goto 6
+  10     print " ";  : goto 15
+  11     let N = N.0
+  12     if N=0 then print "@";
+  13     if N=1 then print "$";
+  15   next
+  16   print ""
+  17 next
+  18 print time; " Sekunden"

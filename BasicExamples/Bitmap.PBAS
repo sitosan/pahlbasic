@@ -1,0 +1,73 @@
+//vorbereitendes Experiment für die Instruktion draw "i" (Image)
+//kommt voraussichtlich in Version V105A40
+//kann man prima in old fashion Basic machen (ab Version A38)
+//nur fuer unkomprimierte Windows Bitmaps mit 480x320 Pixels und 24Bit Farben
+//andere Aufloesungen muessen durch 4 teilbar sein
+//Funktioniert nur mit Display Type 1 oder 2, das Programm kann aber sehr leicht geaendert werden 
+//groessere Bilder werden abgeschnitten
+let time=0
+let A = fn Open("DSC_0010.bmp", 0, 2) : ' Diese Bitmap Datei muss sich im Root-Verzeichnis befinden
+//Datei Header einlesen
+for N=0 to 53 : get #A, A(N) : next : ' Die ersten 54 Bytes (siehe WIKIPEDIA)
+close #A : ' erstmal fertig
+if (A(0)<>66)or(A(1)<>77) then print "Kein Bitmap" : exit.
+//Header anzeigen	
+print "File Header Readings"
+print "---------------------------"
+print chr$(A(0)); chr$(A(1)); " = Bitmap"
+let §Offset = fn Dword(10) : print "Offset: "; §Offset : let O = §Offset : ' Variable O fuer schnelleren Zugriff
+let §Groesse = fn Dword(2) : print "Groesse: "; §Groesse; " Bytes"
+let §Hoehe = fn Dword(22) : print "Hoehe: "; §Hoehe; " Pixel"
+let §Breite = fn Dword(18) : print "Breite: "; §Breite; " Pixel" : let G = §Breite : ' Variable G fuer schnelleren Zugriff
+let §Farbtiefe = fn Word(28) : print "Farbtiefe: "; §Farbtiefe; " Bit"
+let §Kompression = fn Dword(30) : print "Kompression: "; §Kompression
+if §Kompression>0 then print "Komprimierte Bitmaps nicht unterstuetzt" : exit.
+select §Farbtiefe
+	case 24 : let Q = 3 : ' Anzahl Bytes
+	case 32 : let Q = 4
+	celse : print Q; " nicht unterstuetzt" : exit.
+selend
+let T = sys(53) : 'Display Type
+if T<1 then print "Kein Display" : exit. 
+let X = sys(114) : let Y = sys(115) : 'Displaygroesse auslesen
+print "---------------------------"
+print "Display: Type "; T; "  "; X; "x"; Y; " Pixel" : print
+dec X : dec Y : ' Displaygroesse -1 fuer for/next-Schleife beginnend mit 0
+//Bildaten verarbeiten, Datei wieder oeffnen
+let A = fn Open("DSC_0010.bmp", 0, 2)
+//Bildaten lesen, 24Bit nach 16Bit konvertieren und plotten, Lesezeiger auf nächste Pixelreihe:
+if T>1
+	set lcd color= off : cls 1, 0 : ' 16Bit Display: Palette ausschalten, Display loeschen
+	for K=0 to Y
+		restore #A, O+((Y-K)*G*Q)
+		for N=0 to X
+			get #A, B, C, D
+			let F = (B>>3)+((C>>2)<<5)+((D>>3)<<11)
+			plot N, K, F
+		next
+	next
+else
+	cls 1, 0
+	let F=0 : ' 24Bit Display mit Palette, deshalb werden die Farben in die Palette geschrieben
+	for K=0 to Y
+		restore #A, O+((Y-K)*G*Q)
+		for N=0 to X
+			get #A, B, C, D
+			let P(0) = B+(C<<8)+(D<<16)
+			plot N, K, F
+		next
+	next
+end if
+close #A : ' Datei Ende
+let P(0)=0
+print time; "Sekunden"
+end.
+//Funktionen
+	
+function Dword(A)
+	let result = A(A)+(A(A+1)<<8)+(A(A+2)<<16)+(A(A+3)<<24)
+end
+	
+function Word(A)
+	let result = A(A)+(A(A+1)<<8)
+end

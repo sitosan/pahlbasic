@@ -1,0 +1,13 @@
+' Test des CCS881
+' CCS881 und HTU31 angeschlossen und getestet?
+cls : print string(8, 32);
+print "CO2          TVOC        RAW       Temp        rel.LF"
+'set ccs  : 'Baseline setzen, auskommentieren wenn CCS881 kalibriert
+do : 'Hauptschleife
+  let D = sensor(0) : let E = sensor(1)
+  set ccs E, D : 'Temperatur und Luftfeuchte nachfuehren
+  wait 300
+  ccs A, B, C : 'auslesen
+  print str$(A, 12); str$(B, 12); str$(C, 12);   
+  print fix$(D, 12); fix$(E, 12); chr$(13);
+until

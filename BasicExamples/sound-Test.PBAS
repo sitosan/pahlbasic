@@ -1,0 +1,16 @@
+'Dieses Programm zeigt was elementar noetig ist fÅuer die Sound-Erzeugung
+proc Soundtest
+  sound 0, 0 : 'DACs auf Soundausgabe schalten, dauert ca 1 Sekunde
+  let K = 2^(1/12) : 'ein Halbtonschritt ca 6 Prozent
+  for N = 0 to 1023
+    let S(N) = sin(pi*N/512)*2047 : 'Sample-Speicher mit Sinus fÅ¸llen
+  next N
+  let A = 440 : let B = A*4/3 : let C = A*5/4 : 'Grundton und Harmonien
+  for N = 1 to 12 : 'fuer 12 Halbtonschritte
+    let volume = 50 : 'Startlautstaerke fuer jedes "Pling"
+    sound 0, A : sound 3, B : sound 1, C : '3-Klang spielen, Frequenzen A,B,C
+    for M = 0 to 100 : let volume = volume*0.95 : wait 3 : next M : 'HÅuellkurve mit 100 Schritten
+    let A = A*K : let B = B*K : let C = C*K : 'naechste Halbtoene (Frequenzen) berechnen
+  next N
+  sound 0, 0 : sound 3, 0 : sound 1, 0 : 'alle Stimmen still
+end.

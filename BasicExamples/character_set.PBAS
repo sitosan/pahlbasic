@@ -1,0 +1,7 @@
+' Character-Set
+for N=1 to 7
+  for M=0 to 31
+    print chr$(N*32+M);
+  next M
+  print
+next N

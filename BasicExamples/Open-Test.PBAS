@@ -1,0 +1,8 @@
+//Funktioniert erst mit Version V105A31
+if sys(47) = 0 then print "zu viele Dateien geöffnet" : exit. : ' Test ob noch freier Filehandler
+let §Zeiten_w = fn Open("Zeiten", 1, 1) : ' Datei zum Schreiben oefnen (und erzeugen)
+if sys(47) = 0 then print "zu viele Dateien geöffnet" : exit. : ' nochmal testen
+let §Zeiten_r = fn Open("Zeiten", 0, 1) : ' Datei zum Lesen oefnen
+print # §Zeiten_w, date, clock : ' Datum und Uhrzeit schreiben
+input # §Zeiten_r, A$ : print A$ : ' Lesen
+close # §Zeiten_w, §Zeiten_r : ' Beide Filehandler Schliessen

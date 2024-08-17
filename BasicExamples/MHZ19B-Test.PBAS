@@ -1,0 +1,25 @@
+rem MHZ19B-Test
+' MHZ19B an Schnittstelle 2 oder 3 angeschlossen?
+proc Main
+  input "Schnittstelle?: ", §Interface
+  select §Interface
+    case 1 : config com 1, 9600
+    case 2 : config com 2, 9600
+    case 3 : config com 3, 9600
+    celse  : print "Falsches Interface!" : xnd.
+  selend 
+  do
+    print fn MHZ19B(§Interface); chr$(13);
+    wait 1000
+  until
+end.
+  
+function MHZ19B(G)
+  put # G, 255, 1, 134, 0, 0, 0, 0, 0, 121
+  get # G, A, B, C, D, E, E, E, E, F
+  if (A=255) and (B=134)
+    let result = 256*C+D
+  else
+    let result = 0
+  endif
+end

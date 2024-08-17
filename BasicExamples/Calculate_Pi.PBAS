@@ -1,0 +1,48 @@
+ 135 ' From Facebook BASIC Programming Language Group
+ 137 cls 
+ 138 let A=@540 : let B=@610 : let C=@670 : let E=@500
+ 140 print "Calculating Pi as a BASIC benchmark."
+ 150 input "Enter number of digits (below or equal 100): ", A$
+ 170 if (A$="") then print "Nothing done." : exit.
+ 180 let N=val(A$) : if (N>1000) or (N<1) then print "Not a valid number." : goto 150
+ 200 let L=int(10*N/3)+16
+ 210 let O=1
+ 220 let milli=0
+ 250 let R=0
+ 260 let P=0
+ 280 for J=1 to L : let K(J)=2 : next
+ 320 for J=1 to N
+ 330     let Q=0
+ 340     for I=L to 1 step -1
+ 350       let X=10*K(I)+(Q*I)
+ 360       let K(I)=X-((2*I-1)*int(X/(2*I-1)))
+ 370       let Q=int(X/(2*I-1))
+ 380     next I
+ 390     let K(1)=Q-(10*int(Q/10))
+ 400     let Q=int(Q/10)
+ 410     if Q=9 then let R=R+1 : goto ->B
+ 420     if Q<>10 goto ->A
+ 440     let D=P+1 : gosub ->C
+ 450     if R<=0 goto ->E
+ 460     for K=1 to R : let D=0 : gosub ->C : next
+ 500     let P=0
+ 510     let R=0
+ 520     goto ->B
+ 540     let D=P : gosub ->C
+ 550     let P=Q
+ 560     if R=0 goto ->B
+ 570     for K=1 to R : let D=9 : gosub ->C : next
+ 600     let R=0
+ 610 next
+ 620 let C$=str$(P)
+ 621 print C$(-1,1)
+ 635 print "Calculation time ";milli/1000;" seconds."
+ 640 end.
+ 670 let C$=str$(D)
+ 671 if O=0 then print C$(-1,1); : return
+ 680 if D=0 then return
+ 690 let C$=str$(D)
+ 691 print C$(-1,1);".";
+ 700 let O=0
+ 710 return
+ 

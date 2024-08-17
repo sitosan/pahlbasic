@@ -1,0 +1,15 @@
+//Digital Clock2 ohne Interrupt
+proc D_clock
+	cls 1, 0 : 'TFT Loeschen
+	set lcd color=on : 'Palette einschalten
+	'cd\ : draw "chinese_garden320x240.bmp" : 'vielleicht noch ein Hintergrundbild?
+	draw "f", 3, 5, 5, 3 : 'Farbeinstellung (bernstein/gruen) setzt auch die Hintergrundfarbe
+	draw "r", 84, 98, 135, 42, 5 : 'Rechteck mit runden Ecken zeichnen
+	let font = 6
+	let color = 0 : 'schwarze Schrift
+	let H$ = clock : 'Zwischenspeicher laden
+	do : ' Hauptschleife
+		let A = second : while A=second : wend : 'Auf Sekundenwechsel warten
+		text 90, 100, 1, clock
+	until
+end.

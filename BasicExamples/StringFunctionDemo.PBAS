@@ -1,0 +1,12 @@
+//Dieses Beispiel demonstriert die Verwendung von include
+//1.) Dieses Programm mit receive laden
+//2.) Mit receive 2000 bitte die Funktion capital.INC nachladen
+//Load von SD-Card macht alles automatisch, wenn capital.INC im gleichen Verzeichnis ist
+proc StringFunctionDemo
+  while true
+    input "Geben Sie ein kleingeschriebenes Wort ein: ", A$
+    print f$ Kapital(A$, 1)
+  wend
+end.
+  
+include capital.INC

@@ -1,0 +1,27 @@
+proc Clockalarm_Test
+  if fn Testbit(sys(11), 7)=0
+    input "automatische Sommerzeitumschaltung deaktivieren?", A$
+    if (A$ <> "y") then exit.
+    config clock=0
+  endif
+  print "Einschaltzeit:"
+  input "Stunden: ", A(1)
+  input "Minuten: ", A(2)
+  input "Sekunden: ", A(3)
+  on clock 1, 0, A(1), A(2), A(3) start Ein
+  print "Ausschaltzeit:"
+  input "Stunden: ", A(4)
+  input "Minuten: ", A(5)
+  input "Sekunden: ", A(6)
+  on clock 2, 0, A(4), A(5), A(6) start Aus
+  print "OK"
+  while true : wend
+end.
+  
+proc Ein
+  set relay1
+end
+  
+proc Aus
+  reset relay1
+end
