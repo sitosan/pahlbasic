@@ -1,0 +1,29 @@
+// Programm zur Demonstration vom CO2-Sensor SCD41
+// program demonstrates the use of co2 sensor SDC41 
+// needs 5 seconds to mars ehhm to start
+proc SCD41
+	cls : ' clear screen
+	print "preparing SCD40/41 for reading CO2, wait <7 seconds"
+	array I(0),0x32 : i2c "w", 0x62, 0x36, 1 : ' factory reset
+	wait 1300 : ' wait at least 1200 ms
+	array I(0),0x16, 0x00, 0x00, 0x81 : i2c "w", 0x62, 0x24, 4 : ' ASC off
+	wait 100
+	do
+		array I(0), 0x9D : i2c "w", 0x62, 0x21, 1 : ' Einzelmessung anstossen start single measurement
+		wait 5200 : ' mindestens 5 Sek warten wait at least 5 seconds
+		array I(0), 0x05 : i2c "w", 0x62, 0xEC, 1 : ' Messwert lesen vorbereiten prepare reading
+		wait 2
+		i2c "r", 0x62, 0, 9 : ' 9 Bytes lesen  read 9 Bytes
+		cls : ' clear screen
+		'forN=0to8:printI(N):next : ' nur für Tests entkommentieren decomment only for tests
+		let C = I(1)+(I(0)<<8) : print "CO2: "; fix$(C) : ' CO2 make 16Bit value
+		let T = -45+(175*((I(3)<<8)+I(4)/65535)) : ' Temperatur berechnen calculate temperature
+		if C>1100 then set print color=3 : ' Warnfarbe warning color
+		if C>=1200 then set print color=1 : ' Alarmfarbe alert color
+		if C<800 then set print color=7 : ' zurück zur Normalfarbe back to normal
+		print "Temperatur: "; fix$(T) : ' Temperatur auf Terminal ausdrucken print on terminal
+		let H = 100*((I(6)<<8)/65535) : ' calculate Humidity
+		print "rel.Feuchte: "; fix$(H) : ' ausdrucken print rel. humidity
+		wait 60000 : ' Schleife alle 1 Minute loop every minute
+	until : ' ewige Schleife eternal loop
+end.

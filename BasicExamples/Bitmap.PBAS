@@ -57,7 +57,7 @@ else
 			plot N, K, F
 		next
 	next
-end if
+endif
 close #A : ' Datei Ende
 let P(0)=0
 print time; "Sekunden"
