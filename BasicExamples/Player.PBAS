@@ -1,0 +1,15 @@
+//Programm spielt bis zu 128 WAV-Dateien ab
+//ab Version V114
+proc Player
+	reset dir$ : let N=0
+	do
+		get dir$, A$ as 6
+		if (A$ <> "") then let T(N)=A$ : inc N : ' Liste speichern
+	until (A$="") or (N>127)
+	
+	let N=0
+	do
+		print T(N) : play T(N) : ' Liste abspielen
+		inc N
+	until (T(N)="")
+end.
