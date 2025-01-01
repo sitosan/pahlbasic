@@ -5,7 +5,7 @@ proc Player
 	do
 		get dir$, A$ as 6
 		if (A$ <> "") then let T(N)=A$ : inc N : ' Liste speichern
-	until (A$="") or (N>127)
+	until (A$="") or (N>126)
 	
 	let N=0
 	do
