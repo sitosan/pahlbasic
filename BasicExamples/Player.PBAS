@@ -1,7 +1,7 @@
 //Programm spielt bis zu 128 WAV-Dateien ab
 //ab Version V114
 proc Player
-	reset dir$ : let N=0
+	reset dir$ : let N=0 : clear T
 	do
 		get dir$, A$ as 6
 		if (A$ <> "") then let T(N)=A$ : inc N : ' Liste speichern

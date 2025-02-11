@@ -3,10 +3,10 @@ rem MHZ19B-Test
 proc Main
   input "Schnittstelle?: ", §Interface
   select §Interface
-    case 1 : config com 1, 9600
-    case 2 : config com 2, 9600
-    case 3 : config com 3, 9600
-    celse  : print "Falsches Interface!" : xnd.
+    case 1 : config com=1, 9600
+    case 2 : config com=2, 9600
+    case 3 : config com=3, 9600
+    celse  : print "Falsches Interface!" : exit.
   selend 
   do
     print fn MHZ19B(§Interface); chr$(13);

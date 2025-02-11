@@ -1,0 +1,33 @@
+//Test_Program_for_ATSAM2195/ATSAM2695
+//connect_MIDI_in_with_com2_TX
+//only for testing the connections and chip function
+//press a key to stop (not ctrl c)
+proc ATSAM2195
+	call Init_MIDI
+	call Set_Volume(127)
+	call Set_Ch_Vol(1,127)
+	do
+		midi 1,9,60,127 : midi 1,9,63,127 : midi 1,9,66,127 : midi 1,9,69,127
+		wait 1000
+		midi 1,8,60,0 : midi 1,8,63,0 : midi 1,8,66,0 : midi 1,8,69,0
+		wait 100
+		midi 1,9,62,127 : midi 1,9,65,127 : midi 1,9,68,127 : midi 1,9,71,127
+		wait 1000
+		midi 1,8,62,0 : midi 1,8,65,0 : midi 1,8,68,0 : midi 1,8,71,0
+		wait 100
+	until buf	
+	midi 1,8,60,0 : midi 1,8,63,0 : midi 1,8,66,0 : midi 1,8,69,0
+end
+	 
+sub Init_MIDI
+	config com=2,31250,8,0,1
+end
+	
+sub Set_Volume(A)
+	put #2, 0xF0, 0x7F, 0x7F, 0x04, 0x01, 0x00, (A and 0x7F), 0xF7
+end
+	
+sub Set_Ch_Vol(C,A)
+	if C < 1 then exit
+	put #2, (0xB0 or ((C-1) and 0x0F)), 0x07, A
+end
