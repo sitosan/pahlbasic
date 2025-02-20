@@ -1,6 +1,6 @@
 proc PlayTest2
   set sound 110, 7
-  let tempo = 30 : let attack = 60 : let decay = 40 : let release = 100 : let sustain = 0
+  let tempo = 15 : let attack = 60 : let decay = 40 : let release = 100 : let sustain = 0
   do
     let A = 55 : let B = 58 : let C = 62 : let D = 65
     for N=0 to 4
