@@ -8,8 +8,8 @@ proc Player
 	until (A$="") or (N>126)
 	
 	let N=0
-	do
+	while (T(N)<>"")
 		print T(N) : play T(N) : ' Liste abspielen
 		inc N
-	until (T(N)="")
+	wend
 end.

@@ -2,7 +2,7 @@ proc Clockalarm_Test
   if fn Testbit(sys(11), 7)=0
     input "automatische Sommerzeitumschaltung deaktivieren?", A$
     if (A$ <> "y") then exit.
-    config clock=0
+    config clock=off
   endif
   print "Einschaltzeit:"
   input "Stunden: ", A(1)
