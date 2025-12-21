@@ -1,4 +1,4 @@
-# pahlbasic
+# pahlbasic *** Development is paused due to illness ***
 
 A Basic Interpreter for ARM processors STM32F405RG, STM32F407VG/ZG and STM32F411CEU/STM32F401CDU. 
 Allows making of a selfcontained Boot to Basic Computer.
