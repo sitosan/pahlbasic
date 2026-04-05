@@ -1,7 +1,7 @@
 proc Play_Test
   restore "Datas"
   set sound : let volume = 30 : ' Schaltet Sound ein
-  let A = fn Fmod(100, 7) : '"ein paar Obertöne hinzufügen
+  let A = fn Fmod(7,1,1,100) : '"ein paar Obertöne hinzufügen
   on err gosub "Error"
   on milli 1, 250 start Play
   do : until buf : ' auf Tastendruck warten

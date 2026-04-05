@@ -1,5 +1,5 @@
 rem Alarmsound
-set sound 150, 5 : let tempo = 120 : let attack = 15 : let decay = 85 : let release = 10
+set sound 5,1,1,150 : let tempo = 120 : let attack = 15 : let decay = 85 : let release = 10
 print "Zum Starten Taste drücken"
 while buf=0 : wend : let buf = 0
 print "Zum Stoppen Taste drücken"
