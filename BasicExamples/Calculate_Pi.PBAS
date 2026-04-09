@@ -20,18 +20,18 @@
  380     next I
  390     let K(1)=Q-(10*int(Q/10))
  400     let Q=int(Q/10)
- 410     if Q=9 then let R=R+1 : goto ->B
- 420     if Q<>10 goto ->A
- 440     let D=P+1 : gosub ->C
- 450     if R<=0 goto ->E
- 460     for K=1 to R : let D=0 : gosub ->C : next
+ 410     if Q=9 then let R=R+1 : goto B
+ 420     if Q<>10 goto A
+ 440     let D=P+1 : gosub C
+ 450     if R<=0 goto E
+ 460     for K=1 to R : let D=0 : gosub C : next
  500     let P=0
  510     let R=0
- 520     goto ->B
- 540     let D=P : gosub ->C
+ 520     goto B
+ 540     let D=P : gosub C
  550     let P=Q
- 560     if R=0 goto ->B
- 570     for K=1 to R : let D=9 : gosub ->C : next
+ 560     if R=0 goto B
+ 570     for K=1 to R : let D=9 : gosub C : next
  600     let R=0
  610 next
  620 let C$=str$(P)
