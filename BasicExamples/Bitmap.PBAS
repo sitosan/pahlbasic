@@ -6,6 +6,7 @@
 //Funktioniert nur mit Display Type 1 oder 2, das Programm kann aber sehr leicht geaendert werden 
 //groessere Bilder werden abgeschnitten
 let time=0
+cd\
 let A = fn Open("DSC_0010.bmp", 0, 2) : ' Diese Bitmap Datei muss sich im Root-Verzeichnis befinden
 //Datei Header einlesen
 for N=0 to 53 : get #A, A(N) : next : ' Die ersten 54 Bytes (siehe WIKIPEDIA)
