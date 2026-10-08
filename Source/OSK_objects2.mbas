@@ -1,0 +1,57 @@
+module OSK_objects
+
+typedef TOnEventPtr as procedure()
+
+typedef TBytePtr as ^byte
+
+const  _taLeft   = 2
+const  _taCenter = 3
+const  _taRight  = 4
+
+const  _tavTop    = 2
+const  _tavMiddle = 3
+const  _tavBottom = 4
+
+structure TButton_Round
+  dim OwnerScreenAddress   as ^byte
+  dim Order                as byte
+  dim Left_                as word
+  dim Top                  as word
+  dim Width                as byte
+  dim Height               as byte
+  'dim Visible              as byte
+  dim Active               as byte
+  dim Caption              as ^char
+  dim OnDownPtr            as ^TOnEventPtr
+  dim OnClickPtr           as ^TOnEventPtr
+  dim OnPressPtr           as byte   '^TOnEventPtr
+end structure
+
+structure TScreen
+  dim Color                as word
+  dim Width                as word
+  dim Height               as word
+  dim ObjectsCount         as word
+  dim Buttons_RoundCount   as word
+  dim Buttons_Round        as ^ const code ^TButton_Round
+  dim Pen_Width            as byte
+  dim Pen_Color            as word
+  dim Transparent          as byte
+  dim TextAlign            as byte
+  dim TextAlignVertical    as byte
+  dim Fontname             as ^ const byte
+  dim Font_Color           as word
+  dim Gradient             as byte
+  dim Gradient_Orientation as byte
+  dim Gradient_Start_Color as word
+  dim Gradient_End_Color   as word
+  dim Button_Color         as word
+  dim Corner_Radius        as byte
+  dim Press_Color          as word
+end structure
+
+typedef TButton_RoundPtr as ^TButton_Round
+typedef TScreenPtr as ^TScreen
+implements
+
+end.

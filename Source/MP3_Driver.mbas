@@ -1,0 +1,131 @@
+module MP3_driver
+'{**************************************************************************************************
+'* V1053E constants
+'**************************************************************************************************}
+const  WRITE_CODE  = 0x02
+const  READ_CODE   = 0x03
+const  SCI_MODE_ADDR   = 0x00
+const  SCI_CLOCKF_ADDR = 0x03
+const  SCI_VOL_ADDR    = 0x0B
+const  SCI_BASS_ADDR = 0x02
+
+'{**************************************************************************************************
+'* CODEC V1053E connections
+'**************************************************************************************************}
+dim
+  MP3_CS              as sbit sfr external
+  MP3_RST             as sbit sfr external
+  DREQ                as sbit sfr external
+  BSYNC               as sbit sfr external
+
+'{*************************************************************************************************}
+
+sub procedure MP3_SCI_Write(dim address as byte, dim data_in as word)
+sub procedure MP3_Set_Volume(dim left_, right_ as byte)
+sub procedure MP3_SCI_Read(dim start_address, words_count as byte, dim data_buffer as ^byte)
+sub procedure MP3_SDI_Write_32(dim data_ as ^byte)
+sub procedure MP3_SDI_Write(dim data_ as byte)
+
+implements
+'{**************************************************************************************************
+'* Function MP3_SCI_Write()
+'* -------------------------------------------------------------------------------------------------
+'* Overview: Function writes one byte to MP3 SCI
+'* Input: register address in codec, data
+'* Output: Nothing
+'**************************************************************************************************}
+sub procedure MP3_SCI_Write(dim address as byte, dim data_in as word)
+  BSYNC = 1
+
+  MP3_CS = 0                              ' select MP3 SCI
+  SPI3_Write(WRITE_CODE)
+  SPI3_Write(address)
+  SPI3_Write(Hi(data_in))                 ' high byte
+  SPI3_Write(Lo(data_in))                 ' low byte
+  MP3_CS = 1                              ' deselect MP3 SCI
+  while (DREQ = 0) nop wend               ' wait until DREQ becomes 1, see MP3 codec datasheet, Serial Protocol for SCI
+end sub
+
+'{**************************************************************************************************
+'* Function MP3_SCI_Read()
+'* -------------------------------------------------------------------------------------------------
+'* Overview: Function reads words_count words from MP3 SCI
+'* Input: start address, word count to be read
+'* Output: words are stored to data_buffer
+'**************************************************************************************************}
+sub procedure MP3_SCI_Read(dim start_address, words_count as byte, dim data_buffer as ^byte)
+dim temp as word
+
+  MP3_CS = 0                              ' select MP3 SCI
+  SPI3_Write(READ_CODE)                   ' Read command
+  SPI3_Write(start_address)
+
+'read words_count words byte per byte
+  while (words_count > 0)
+    temp = SPI3_Read(0)
+    temp = temp << 8
+    temp = temp + SPI3_Read(0)
+    data_buffer^ = temp
+    data_buffer = data_buffer + 1
+    dec(words_count)
+  wend
+  MP3_CS = 1                              ' deselect MP3 SCI
+  while (DREQ = 0) nop wend               ' wait until DREQ becomes 1, see MP3 codec datasheet, Serial Protocol for SCI
+end sub
+
+'{**************************************************************************************************
+'* Function MP3_SDI_Write()
+'* -------------------------------------------------------------------------------------------------
+'* Overview: Function write one byte to MP3 SDI
+'* Input: data to be writed
+'* Output: Nothing
+'**************************************************************************************************}
+sub procedure MP3_SDI_Write(dim data_ as byte)
+  MP3_CS = 1
+  BSYNC  = 0
+
+  while (DREQ = 0) nop wend               ' wait until DREQ becomes 1, see MP3 codec datasheet, Serial Protocol for SCI
+
+  SPI3_Write(data_)
+  BSYNC = 1
+end sub
+
+'{**************************************************************************************************
+'* Function MP3_SDI_Write_32
+'* -------------------------------------------------------------------------------------------------
+'* Overview: Function Write 32 bytes to MP3 SDI
+'* Input: data buffer
+'* Output: Nothing
+'**************************************************************************************************}
+sub procedure MP3_SDI_Write_32(dim data_ as ^byte)
+  dim i as byte
+
+  MP3_CS = 1
+  BSYNC  = 0
+
+  while (DREQ = 0) nop wend               ' wait until DREQ becomes 1, see MP3 codec datasheet, Serial Protocol for SCI
+
+  for i = 0 to 31
+    SPI3_Write(data_^)                    ' Write byte pointed by data
+    Inc(data_)
+  next i
+  BSYNC = 1
+end sub
+
+'{**************************************************************************************************
+'* Function MP3_Set_Volume()
+'* -------------------------------------------------------------------------------------------------
+'* Overview: Function set volume on the left and right channel
+'* Input: left channel volume, right channel volume
+'* Output: Nothing
+'**************************************************************************************************}
+sub procedure MP3_Set_Volume(dim left_, right_ as byte)
+dim volume as word
+  volume = (left_ << 8) + right_          ' calculate value
+  MP3_SCI_Write(SCI_VOL_ADDR, volume)         ' Write value to VOL register
+end sub
+
+'{**************************************************************************************************
+'* End of File
+'**************************************************************************************************}
+end.

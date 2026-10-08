@@ -1,0 +1,231 @@
+'{**************************************************************************************************
+'* File: MP3_Test.mbas
+'* (C) mikroElektronika, 2010-2012
+'* Revision History:
+'*     Initial release
+'* Description:
+'*     This project demonstrates communication with VS1053B mp3 codec.
+'*     Program reads one mp3 file from MMC and sends it to VS1053B for decoding
+'*     and playing.
+'*     MMC and MP3_SCI share Hardware SPI module.
+'* Test configuration:
+'*       MCU:             STM32F107VC
+'*                        http://www.st.com/st-web-ui/static/active/en/resource/technical/document/datasheet/CD00220364.pdf
+'*       Dev.board:       EasyMx PRO v7 for STM32(R) ARM(R)
+'*                        http://www.mikroe.com/easymx-pro/stm32/
+'*                        ac:tft_touchpanel
+'*       Modules:         MP3 VS1053B on-board module
+'*                        ac:MP3_codec
+'*       Oscillator:      HSE-PLL, 72.0000 MHz
+'*       SW:              mikroBasic PRO for ARM
+'*                        http://www.mikroe.com/mikrobasic/arm/
+'* NOTES:
+'*     - Make sure that MMC card is properly formatted (to FAT16 or just FAT)
+'*       before testing it on this example.
+'*     - Make sure that MMC card contains appropriate mp3 file ( sound.mp3 ).
+'*     - Turn on SPI and audio switches SW13.1 to SW13.7 and turn on microSD card
+'*       switches SW14.3 and SW14.4
+'**************************************************************************************************}
+program MP3_Test
+'{*************************************************************************************************}
+include MP3_driver
+include MP3_Resources
+
+dim
+'**************************************************************************************************
+'* TFT module connections
+'**************************************************************************************************}
+  TFT_DataPort as word at GPIOE_ODR
+  TFT_RST      as sbit at GPIOE_ODR.B8
+  TFT_RS       as sbit at GPIOE_ODR.B12
+  TFT_CS       as sbit at GPIOE_ODR.B15
+  TFT_RD       as sbit at GPIOE_ODR.B10
+  TFT_WR       as sbit at GPIOE_ODR.B11
+  TFT_BLED     as sbit at GPIOE_ODR.B9
+'{**************************************************************************************************
+'* MMC Chip Select connection
+'**************************************************************************************************}
+  Mmc_Chip_Select as sbit     at GPIOD_ODR.B3
+'{**************************************************************************************************
+'* CODEC V1053E connections
+'**************************************************************************************************}
+  MP3_CS              as sbit at GPIOC_ODR.B8
+  MP3_RST             as sbit at GPIOC_ODR.B7
+  BSYNC               as sbit at GPIOC_ODR.B9
+  DREQ                as sbit at GPIOC_IDR.B6
+
+'{**************************************************************************************************
+'* Global Variables
+'**************************************************************************************************}
+const BYTES_2_WRITE = 32
+const BUFFER_SIZE = 512
+
+dim
+  mp3_filename as string[14]     ' MP3 file name
+  file_size as longint
+
+  mp3_buffer as byte[BUFFER_SIZE]
+  volume_left, volume_right as byte
+
+  ucMP3_run_test as char
+  
+'{*************************************************************************************************
+'* Init MCU function
+'**************************************************************************************************}
+sub procedure InitMCU()
+  ' MP3 config
+  GPIO_Digital_Output(@GPIOC_BASE, _GPIO_PINMASK_7)    ' RST
+  GPIO_Digital_Input (@GPIOC_BASE, _GPIO_PINMASK_6)    ' DREQ
+  GPIO_Digital_Output(@GPIOC_BASE, _GPIO_PINMASK_8)    ' CS
+  GPIO_Digital_Output(@GPIOC_BASE, _GPIO_PINMASK_9)    ' DCS
+
+  ' Init TFT
+  TFT_Init_ILI9341_8bit(320, 240)
+  Delay_ms(1000)
+  TFT_BLED = 1
+end sub
+'{*************************************************************************************************}
+sub procedure DrawMP3Scr()
+  TFT_Fill_Screen(CL_WHITE)
+  TFT_Set_Pen(CL_Black, 1)
+  TFT_Line(20, 220, 300, 220)
+  TFT_LIne(20,  46, 300,  46)
+  TFT_Set_Font(@HandelGothic_BT21x22_Regular, CL_RED, FO_HORIZONTAL)
+  TFT_Write_Text("MP3  TEST", 75, 14)
+  TFT_Set_Font(@Verdana12x13_Regular, CL_BLACK, FO_HORIZONTAL)
+  TFT_Write_Text("EasyMxv7", 19, 223)
+  TFT_Set_Font(@Verdana12x13_Regular, CL_RED, FO_HORIZONTAL)
+  TFT_Write_Text("www.mikroe.com", 200, 223)
+  TFT_Set_Font(@TFT_defaultFont, CL_BLACK, FO_HORIZONTAL)
+end sub
+
+'{**************************************************************************************************
+'* Function MP3_Init()
+'* -------------------------------------------------------------------------------------------------
+'* Overview: Function Initialize MP3 module
+'* Input: Nothing
+'* Output: Nothing
+'**************************************************************************************************}
+sub procedure MP3_Init()
+  BSYNC = 1
+  MP3_CS = 1
+
+  ' Hardware reset
+  MP3_RST = 0
+  Delay_ms(10)
+  MP3_RST = 1
+
+  while (DREQ = 0)  wend
+
+  MP3_SCI_Write(SCI_MODE_ADDR, 0x0800)
+  MP3_SCI_Write(SCI_BASS_ADDR, 0x7A00)
+  MP3_SCI_Write(SCI_CLOCKF_ADDR, 0xC000)   ' default 12 288 000 Hz
+
+  ' Maximum volume is 0x00 and total silence is 0xFE.
+  volume_left  = 0 '0x3F
+  volume_right = 0 '0x3F
+  MP3_Set_Volume(volume_left, volume_right)
+end sub
+
+'{**************************************************************************************************
+'* Function MP3_Start()
+'* -------------------------------------------------------------------------------------------------
+'* Overview: Function Initialize SPI to communicate with MP3 codec
+'* Input: Nothing
+'* Output: Nothing
+'**************************************************************************************************}
+sub procedure MP3_Start()
+
+  MP3_CS            = 1               ' Deselect MP3_CS
+  MP3_RST           = 1               ' Set MP3_RST pin
+
+  BSYNC             = 0               ' Clear BSYNC
+  BSYNC             = 1               ' Clear BSYNC
+
+  ' Initialize SPI3 module
+  SPI3_Init_Advanced(_SPI_FPCLK_DIV32, _SPI_MASTER  or _SPI_8_BIT or
+                     _SPI_CLK_IDLE_LOW or _SPI_FIRST_CLK_EDGE_TRANSITION or
+                     _SPI_MSB_FIRST or _SPI_SS_DISABLE or _SPI_SSM_ENABLE or _SPI_SSI_1,
+                     @_GPIO_MODULE_SPI3_PC10_11_12)
+  TFT_BLED = 1                           ' Turn ON TFT backlight
+
+  TFT_Set_Font(@TFT_defaultFont, CL_BLACK, FO_HORIZONTAL)
+  TFT_Set_Pen(CL_WHITE, 1)
+  TFT_Set_Brush(1, CL_WHITE, 0, 0, 0, 0)
+
+  TFT_Write_Text("1. Initializing VS1053B decoder interface", 30, 80)
+
+  MP3_Init()
+  Delay_ms(1000)
+end sub
+
+'{**************************************************************************************************
+'* Function MP3_Test()
+'* -------------------------------------------------------------------------------------------------
+'* Overview: Function run the MP3 test
+'* Input: Nothing
+'* Output: test status: 0 - skiped 1 - pass 2 - fail
+'**************************************************************************************************}
+sub procedure MP3_Test(dim byref test as byte)
+dim i as longint
+  ' Reset error flag
+  test = 0
+
+  TFT_Write_Text("2. Initializing MMC_FAT", 30, 100)
+  if Mmc_Fat_Init() = 0 then
+    if (Mmc_Fat_Assign(mp3_filename, 0) ) then
+      TFT_Write_Text("3. File Assigned", 30, 120)
+      Mmc_Fat_Reset(file_size)          ' Call Reset before file reading,
+                                          '   procedure returns size of the file
+
+      TFT_Set_Font(@TFT_defaultFont, CL_BLACK, FO_HORIZONTAL)
+
+      TFT_Write_Text("4. Play audio... :)", 30, 140)
+      ' send file blocks to MP3 SDI
+      while (file_size > BUFFER_SIZE)
+        for i = 0 to BUFFER_SIZE - 1
+          Mmc_Fat_Read(mp3_buffer[i])
+        next i
+
+        for i = 0 to BUFFER_SIZE/BYTES_2_WRITE -1
+          MP3_SDI_Write_32(@mp3_buffer + i*BYTES_2_WRITE)
+        next i
+
+        file_size = file_size - BUFFER_SIZE
+      wend
+
+      ' send the rest of the file to MP3 SDI
+      for i = 0 to file_size - 1
+        Mmc_Fat_Read(mp3_buffer[i])
+      next i
+
+      for i = 0 to file_size - 1
+        MP3_SDI_Write(mp3_buffer[i])
+      next i
+
+      TFT_Write_Text("5. Finish!", 30, 160)
+
+    else
+      TFT_Write_Text("3. File not assigned", 30, 120)
+      test = 2
+    end if
+
+  else
+    TFT_Write_Text("3. MMC FAT not initialized", 30, 120)
+    test = 2
+  end if
+end sub
+
+'{**************************************************************************************************
+'* main function
+'**************************************************************************************************}
+
+main:
+  InitMCU()
+
+  mp3_filename = "sound.mp3"
+  DrawMP3Scr()
+
+  MP3_Start()
+  MP3_Test(ucMP3_run_test)
+end.

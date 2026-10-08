@@ -1,0 +1,113 @@
+module soft_iic
+sub procedure I2CStart()
+sub procedure I2CRestart()
+sub procedure I2CStop()
+sub procedure I2CAck()
+sub procedure I2CNak()
+sub function I2CSend(dim _Data as byte) as byte
+sub function I2CRead() as byte
+
+dim SCL as sbit sfr external  'at GPIOB_ODR.B10
+dim SDA_O as sbit sfr external  'at GPIOB_ODR.B11
+dim SDA_I as sbit sfr external 'at GPIOB_IDR.B11
+
+implements
+
+sub procedure I2CStart()
+  SDA_O = 1
+  delay_us(2)
+  SCL = 1
+  delay_us(1)
+  SDA_O = 0
+  delay_us(1)
+  SCL = 0
+end sub
+
+sub procedure I2CRestart()
+  SCL = 0
+  SDA_O = 1
+  delay_us(2)
+  SCL = 1
+  delay_us(1)
+  SDA_O = 0
+  delay_us(1)
+  SCL = 0
+end sub
+
+sub procedure I2CStop()
+  SCL = 0
+  SDA_O = 0
+  delay_us(2)
+  SCL = 1
+  delay_us(1)
+  SDA_O = 1
+  delay_us(1)
+  SCL = 0
+end sub
+
+sub procedure I2CAck()
+  SDA_O = 0
+  delay_us(1)
+  SCL = 1
+  delay_us(1)
+  SCL = 0
+  SDA_O = 1
+end sub
+
+sub procedure I2CNak()
+  SDA_O = 1
+  delay_us(1)
+  SCL = 1
+  delay_us(1)
+  SCL = 0
+end sub
+
+sub function I2CSend(dim _Data as byte) as byte
+  dim i, ack as byte
+  for i = 0 to 7
+    SCL = 0
+    delay_us(2)
+    if (_Data and 0x80) = 0 then
+      SDA_O = 0
+    else
+      SDA_O = 1
+    end if
+    SCL = 1
+    delay_us(1)
+    _Data = _Data << 1
+  next i
+  SCL = 0
+  GPIO_Digital_Input(@GPIOB_BASE, _GPIO_PINMASK_11)
+  delay_us(1)
+  SCL = 1
+  delay_us(1)
+  if SDA_I = 1 then
+     ack = 0x01
+  else	
+       ack = 0x00
+  end if
+  SCL = 0
+  GPIO_Digital_Output(@GPIOB_BASE, _GPIO_PINMASK_11)
+  result = ack
+end sub
+
+sub function I2CRead() as byte
+  dim i, _Data as byte
+  _Data = 0
+  GPIO_Digital_Input(@GPIOB_BASE, _GPIO_PINMASK_11)
+  for i = 0 to 7
+    SCL = 0
+    delay_us(2)
+    SCL = 1
+    delay_us(1)
+    _Data = _Data << 1
+    if SDA_I  then
+      _Data = _Data or 1
+    end if
+  next i
+  SCL = 0
+  GPIO_Digital_Output(@GPIOB_BASE, _GPIO_PINMASK_11)
+  result = _Data
+end sub
+
+end.

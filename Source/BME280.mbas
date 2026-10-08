@@ -1,0 +1,241 @@
+module BME280
+
+const PRESSURE4_ADDR0     = 0x76
+const PRESSURE4_ADDR1     = 0x77
+const PRESSURE4_ID        = 0xD0
+const PRESSURE4_RESET     = 0xE0
+const PRESSURE4_STATUS    = 0xF3
+const PRESSURE4_CTL_MEAS  = 0xF4
+const PRESSURE4_CONFIG    = 0xF5
+const PRESSURE4_PRESS_MSB = 0xF7
+const PRESSURE4_PRESS_LSB = 0xF8
+const PRESSURE4_PRESS_XLSB= 0xF9
+const PRESSURE4_TEMP_MSB  = 0xFA
+const PRESSURE4_TEMP_LSB  = 0xFB
+const PRESSURE4_TEMP_XLSB = 0xFC
+
+const PRESSURE4_CALLIBRATION_DIG_T1 = 0x88
+const PRESSURE4_CALLIBRATION_DIG_T2 = 0x8A
+const PRESSURE4_CALLIBRATION_DIG_T3 = 0x8C
+const PRESSURE4_CALLIBRATION_DIG_P1 = 0x8E
+const PRESSURE4_CALLIBRATION_DIG_P2 = 0x90
+const PRESSURE4_CALLIBRATION_DIG_P3 = 0x92
+const PRESSURE4_CALLIBRATION_DIG_P4 = 0x94
+const PRESSURE4_CALLIBRATION_DIG_P5 = 0x96
+const PRESSURE4_CALLIBRATION_DIG_P6 = 0x98
+const PRESSURE4_CALLIBRATION_DIG_P7 = 0x9A
+const PRESSURE4_CALLIBRATION_DIG_P8 = 0x9C
+const PRESSURE4_CALLIBRATION_DIG_P9 = 0x9E
+
+dim dig_T1 as word
+dim dig_T2 as integer
+dim dig_T3 as integer
+
+dim dig_P1 as word
+dim dig_P2 as integer
+dim dig_P3 as integer
+dim dig_P4 as integer
+dim dig_P5 as integer
+dim dig_P6 as integer
+dim dig_P7 as integer
+dim dig_P8 as integer
+dim dig_P9 as integer
+
+dim t_fine as longint
+dim t1Calc1, p3Calc1 as float
+dim pr4_adress as byte external
+
+sub procedure pressure4_writeReg8bit(dim wReg, wData as byte)
+sub function pressure4_readReg8bit(dim rReg as byte) as byte
+sub function pressure4_readReg16bit(dim rReg as byte) as word
+sub function pressure4_readRegS16bit(dim rReg as byte) as integer
+sub function pressure4_readReg24bit(dim rReg as byte) as longword
+sub procedure pressure4_swRst()
+sub function pressure4_readId() as byte
+sub function pressure4_getStatus() as byte
+sub function pressure4_convStatus() as byte
+sub function pressure4_readConst(dim addr as byte) as word
+sub procedure pressure4_readConstants()
+sub procedure pressure4_init()
+sub function pressure4_getTemperature() as float
+sub function pressure4_getPressure() as float
+sub procedure pressure4_prConstants()
+
+implements
+
+' --------------------------------------------------------- PUBLIC FUNCTIONS */
+
+sub procedure prc(dim num as longint)                                          ' Zahl ausgeben ohne Verwendung von pstr
+dim ntxt as string[20]
+longinttostr(num, ntxt)  ltrim(ntxt)
+uart1_write_text(ntxt)
+uart1_write(13)   uart1_write(10)
+end sub
+
+sub procedure pressure4_writeReg8bit(dim wReg, wData as byte)
+dim regWrite as byte[3]
+regWrite[0] = wReg
+regWrite[1] = wData
+i2C1_Start()
+i2C1_Write(pr4_adress, @regWrite, 2, END_MODE_STOP)
+end sub
+
+sub function pressure4_readReg8bit(dim rReg as byte) as byte
+dim regRead as byte[5]
+dim regWrite as byte[5]
+regWrite[0] = rReg
+i2c1_Start()
+i2C1_Write(pr4_adress, @regWrite, 1, END_MODE_RESTART)
+i2C1_Read(pr4_adress, @regRead, 1, END_MODE_STOP)
+result = regRead[0]
+end sub
+
+sub function pressure4_readReg16bit(dim rReg as byte) as word
+dim regRead as byte[5]
+dim regWrite as byte[5]
+dim tmp as word
+regWrite[0] = rReg
+i2C1_Start()
+i2C1_Write(pr4_adress, @regWrite, 1, END_MODE_RESTART)
+i2C1_Read(pr4_adress, @regRead, 2, END_MODE_STOP)
+tmp = word(regRead[0]<<8) or regRead[1]
+result = tmp
+end sub
+
+sub function pressure4_readRegS16bit(dim rReg as byte) as integer
+dim regVal as byte
+regVal=rReg
+result = integer(pressure4_readReg16bit(regVal))
+end sub
+
+sub function pressure4_readReg24bit(dim rReg as byte) as longword
+dim regRead as byte[5]
+dim regWrite as byte[5]
+dim tmp as longword
+regWrite[0] = rReg
+i2C1_Start()
+i2C1_Write(pr4_adress, @regWrite, 1, END_MODE_RESTART)
+i2C1_Read(pr4_adress, @regRead, 3, END_MODE_STOP)
+tmp = longword(regRead[0]<<16) or word(regRead[1] << 8) or regRead[2]
+result = tmp >> 4
+end sub
+
+'sub function pressure4_readReg24bit(dim rReg as byte) as longword
+'dim tmp as longword
+'tmp = pressure4_readReg16bit(rReg)
+'tmp = tmp << 8
+'tmp = tmp or pressure4_readReg8bit(rReg+2)
+'result =  tmp>>4
+'end sub
+
+sub procedure pressure4_swRst()
+pressure4_writeReg8bit(PRESSURE4_RESET,0xB6)
+end sub
+
+sub function pressure4_readId() as byte
+pressure4_swRst()
+result = pressure4_readReg8bit(PRESSURE4_ID)
+end sub
+
+sub function pressure4_getStatus() as byte
+result = pressure4_readReg8bit(PRESSURE4_STATUS)
+end sub
+
+sub function pressure4_convStatus() as byte
+result = ((pressure4_getStatus() and 1<<3) >> 3)
+end sub
+
+sub function pressure4_readConst(dim addr as byte) as word
+dim regRead as byte[5]
+dim regWrite as byte[5]
+'dim tmp as word
+regWrite[0] = addr
+i2c1_Start()
+i2c1_Write(pr4_adress, @regWrite,1,END_MODE_RESTART)
+i2c1_Read(pr4_adress, @regRead,2,END_MODE_STOP)
+result = word(regRead[1]<<8) or regRead[0]
+end sub
+
+sub procedure pressure4_readConstants()
+    dig_T1 = pressure4_readConst(PRESSURE4_CALLIBRATION_DIG_T1)
+    dig_T2 = pressure4_readConst(PRESSURE4_CALLIBRATION_DIG_T2)
+    dig_T3 = pressure4_readConst(PRESSURE4_CALLIBRATION_DIG_T3)
+
+    dig_P1 = pressure4_readConst(PRESSURE4_CALLIBRATION_DIG_P1)
+    dig_P2 = pressure4_readConst(PRESSURE4_CALLIBRATION_DIG_P2)
+    dig_P3 = pressure4_readConst(PRESSURE4_CALLIBRATION_DIG_P3)
+    dig_P4 = pressure4_readConst(PRESSURE4_CALLIBRATION_DIG_P4)
+    dig_P5 = pressure4_readConst(PRESSURE4_CALLIBRATION_DIG_P5)
+    dig_P6 = pressure4_readConst(PRESSURE4_CALLIBRATION_DIG_P6)
+    dig_P7 = pressure4_readConst(PRESSURE4_CALLIBRATION_DIG_P7)
+    dig_P8 = pressure4_readConst(PRESSURE4_CALLIBRATION_DIG_P8)
+    dig_P9 = pressure4_readConst(PRESSURE4_CALLIBRATION_DIG_P9)
+end sub
+
+sub procedure pressure4_prConstants()
+prc(dig_T1)
+prc(dig_T2)
+prc(dig_T3)
+prc(dig_P1)
+prc(dig_P2)
+prc(dig_P3)
+prc(dig_P4)
+prc(dig_P5)
+prc(dig_P6)
+prc(dig_P7)
+prc(dig_P8)
+prc(dig_P9)
+end sub
+
+sub function digT1Calc() as float
+    result = float(dig_T1)/8192.0
+end sub
+
+sub function digP3Calc() as float
+    result = float(dig_P3) / 524288.0
+end sub
+
+sub procedure pressure4_init()
+    pressure4_swRst()
+    pressure4_readConstants()
+    'pressure4_writeReg8bit(PRESSURE4_CTL_MEAS and 0x7F, 0x3F)
+    pressure4_writeReg8bit(PRESSURE4_CTL_MEAS, 0x3F)
+    t1Calc1=digT1Calc()
+    p3Calc1=digP3Calc()
+end sub
+
+sub function pressure4_getTemperature() as float
+dim adc_T as longint
+dim var1, var2, T as float
+   adc_T = pressure4_readReg24bit(PRESSURE4_TEMP_MSB)
+   var1 = (float(adc_T)/16384.0 - float(dig_T1)/1024.0) * float(dig_T2)
+   var2 = ((float(adc_T)/131072.0 - float(dig_T1)/8192.0) * (float(adc_T)/131072.0 - float(dig_T1)/8192.0)) * float(dig_T3)
+   t_fine = longint(var1+var2)
+   T=(var1+var2)/5120.0
+result = T
+end sub
+
+sub function pressure4_getPressure() as float
+dim var1, var2, p123 as float
+dim adc_P as float
+    pressure4_getTemperature()
+    adc_P = pressure4_readReg24bit(PRESSURE4_PRESS_MSB)
+    var1 = t_fine/2.0 - 64000.0
+    var2 = var1 * var1 * dig_P6 / 32768.0
+    var2 = var2 + var1 * dig_P5 * 2.0
+    var2 = ( var2 / 4.0 ) + ( dig_P4 * 65536.0 )
+    var1 = (float(dig_P3) * var1 * var1 / 524288.0 + float(dig_P2) * var1) / 524288.0
+    var1 = (1.0 + var1 / 32768.0)*float(dig_P1)
+    if var1 = 0.0 then
+       result = 0
+       exit
+    end if
+    p123 = 1048576.0 - float(adc_P)
+    p123 = (p123 - (var2  / 4096.0)) * 6250 / var1
+    var1 = float(dig_P9) * p123 * p123 / 2147483648.0
+    var2 = p123 * float(dig_P8) / 32768.0
+    p123 = p123 + (var1+var2+float(dig_P7))/16.0
+    result =  p123/100.0
+end sub
+
+end.

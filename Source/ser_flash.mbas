@@ -1,0 +1,189 @@
+module ser_flash
+'Treiber für winbond flash  w25q16
+sub function sf_status() as byte
+sub function sf_busy() as byte
+sub procedure sf_we()
+sub procedure sf_wd()
+sub procedure sf_write_byte(dim adress as longword, dim dat as byte)
+sub function sf_read_byte(dim adress as longword) as byte
+sub procedure sf_write_float(dim adress as longword, dim d_pointer as ^byte)
+sub procedure sf_read_float(dim adress as longword, dim d_pointer as ^byte)
+sub procedure sf_write_page(dim page_nr as longword, dim d_pointer as ^byte)
+sub procedure sf_read_page(dim page_nr as longword, dim d_pointer as ^byte)
+sub procedure sf_sector_erase(dim adress as longword)
+sub procedure sf_block_erase(dim block as longword)
+sub procedure sf_chip_erase()
+sub function sf_id() as longword
+
+dim sf_cs as sbit sfr external
+dim spibyte as byte external
+dim spi_set as byte external
+
+implements
+
+'sub function spi_get_byte  as byte
+'    while spi_set = 0
+'    wend
+'    result = spibyte
+'    spi_set = 0
+'     while RXNE_bit =0
+'     wend
+'     result = SPI1_DR
+'     RXNE_bit =0
+'end sub
+
+sub function sf_status() as byte
+  sf_cs = 0
+  SPI_Wr_Ptr(0x05)
+  result = SPI_Rd_Ptr(0)
+  sf_cs = 1
+end sub
+
+sub function sf_busy() as byte
+  dim tmp as byte volatile
+  sf_cs = 0
+  SPI_Wr_Ptr(0x05)
+  tmp = SPI_Rd_Ptr(0)
+  result = tmp and 0x01
+  sf_cs = 1
+  delay_us(1)
+end sub
+
+sub procedure sf_we()
+  sf_cs = 0
+  SPI_Wr_Ptr(0x06)
+  sf_cs = 1
+end sub
+
+sub procedure sf_wd()
+  sf_cs = 0
+  SPI_Wr_Ptr(0x04)
+  sf_cs = 1
+end sub
+
+sub function sf_id() as longword
+  dim tmp as longword volatile
+  sf_cs = 0
+  SPI_Wr_Ptr(0x9F)
+  tmp = SPI_Rd_Ptr(0)
+  tmp = tmp << 8
+  tmp = tmp or SPI_Rd_Ptr(0)
+  tmp = tmp << 8
+  tmp = tmp or SPI_Rd_Ptr(0)
+  result = tmp
+  sf_cs = 1
+end sub
+
+sub procedure sf_write_byte(dim adress as longword, dim dat as byte)
+   sf_cs = 0
+   SPI_Wr_Ptr(0x02)
+   SPI_Wr_Ptr(higher(adress))
+   SPI_Wr_Ptr(Hi(adress))
+   SPI_Wr_Ptr(Lo(adress))
+   SPI_Wr_Ptr(dat)
+   sf_cs = 1
+   while sf_busy = 1
+   wend
+end sub
+
+sub function sf_read_byte(dim adress as longword) as byte
+   sf_cs = 0
+   SPI_Wr_Ptr(0x03)
+   SPI_Wr_Ptr(higher(adress))
+   SPI_Wr_Ptr(Hi(adress))
+   SPI_Wr_Ptr(Lo(adress))
+   result = SPI_Rd_Ptr(0)
+   sf_cs = 1
+end sub
+
+sub procedure sf_write_float(dim adress as longword, dim d_pointer as ^byte)
+    dim n as longword volatile
+    sf_cs = 0
+    SPI_Wr_Ptr(0x02)
+    SPI_Wr_Ptr(higher(adress))
+    SPI_Wr_Ptr(Hi(adress))
+    SPI_Wr_Ptr(Lo(adress))
+    for n = 0 to 7
+        SPI_Wr_Ptr(d_pointer^)
+        inc(d_pointer)
+    next n
+    sf_cs = 1
+    while sf_busy = 1
+    wend
+end sub
+
+sub procedure sf_read_float(dim adress as longword, dim d_pointer as ^byte)
+    dim n as longword volatile
+    sf_cs = 0
+    SPI_Wr_Ptr(0x03)
+    SPI_Wr_Ptr(higher(adress))
+    SPI_Wr_Ptr(Hi(adress))
+    SPI_Wr_Ptr(Lo(adress))
+    for n = 0 to 7
+        d_pointer^ = SPI_Rd_Ptr(0)
+        inc(d_pointer)
+    next n
+    sf_cs = 1
+end sub
+
+sub procedure sf_write_page(dim page_nr as longword, dim d_pointer as ^byte)
+    dim n as longword volatile
+    sf_cs = 0
+    SPI_Wr_Ptr(0x02)
+    SPI_Wr_Ptr(Hi(page_nr))
+    SPI_Wr_Ptr(Lo(page_nr))
+    SPI_Wr_Ptr(0x00)
+    for n = 0 to 255
+        SPI_Wr_Ptr(d_pointer^)
+        inc(d_pointer)
+    next n
+    sf_cs = 1
+    while sf_busy = 1
+    wend
+end sub
+
+sub procedure sf_read_page(dim page_nr as longword, dim d_pointer as ^byte)
+    dim n as longword volatile
+    sf_cs = 0
+    SPI_Wr_Ptr(0x03)
+    SPI_Wr_Ptr(Hi(page_nr))
+    SPI_Wr_Ptr(Lo(page_nr))
+    SPI_Wr_Ptr(0x00)
+    for n = 0 to 255
+        d_pointer^ = SPI_Rd_Ptr(0)
+        inc(d_pointer)
+    next n
+    sf_cs = 1
+end sub
+
+sub procedure sf_sector_erase(dim adress as longword)
+    sf_cs = 0
+    SPI_Wr_Ptr(0x20)
+    SPI_Wr_Ptr(higher(adress))
+    SPI_Wr_Ptr(Hi(adress))
+    SPI_Wr_Ptr(Lo(adress))
+    sf_cs = 1
+    while sf_busy = 1
+    wend
+end sub
+
+sub procedure sf_block_erase(dim block as longword)
+    sf_cs = 0
+    SPI_Wr_Ptr(0xD8)
+    SPI_Wr_Ptr(block)
+    SPI_Wr_Ptr(0)
+    SPI_Wr_Ptr(0)
+    sf_cs = 1
+    while sf_busy = 1
+    wend
+end sub
+
+sub procedure sf_chip_erase()
+    sf_cs = 0
+    SPI_Wr_Ptr(0xC7)
+    sf_cs = 1
+    while sf_busy = 1
+    wend
+end sub
+
+end.

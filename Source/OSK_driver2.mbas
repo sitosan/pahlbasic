@@ -1,0 +1,4005 @@
+module OSK_driver
+
+include OSK_objects2
+'include OSK_resources
+
+const Arial16x19_Bold  as byte[7117]  external
+dim T_IRRPT      as sbit  external sfr
+dim x_raw        as word  external
+dim y_raw        as word  external
+dim konsole_uart as word  external
+dim x_factor     as float external
+dim y_factor     as float external
+dim X_offset, Y_offset as integer external
+'dim TFT_Backcol  as word  external
+
+dim key_pressed, key_released, key_newest, key_ctrl as byte external
+sub procedure get_coord_raw external
+sub procedure put_char_in_buffer(dim b_char as char, dim intrfce_nmbr as word) external
+sub procedure esc_sequence(dim ctr_char as byte, dim iface as word) external
+sub procedure fn_key(dim funckey as byte, dim intrfce as word) external
+sub procedure set_font external
+'sub procedure prn(dim num as int64) external
+
+' External Declarations
+'/////////////////////////
+
+sub procedure DrawScreen(dim aScreen as ^TScreen)
+sub procedure Check_TP()
+sub procedure Start_TP()
+sub procedure DrawRoundButton(dim Around_button as ^TButton_Round)
+
+' Global variables
+dim Xcoord, Ycoord, xalt, yalt as word
+dim PenDown as byte
+dim PressedObject as TBytePtr
+dim PressedObjectType as integer
+dim display_width, display_height as word
+
+dim
+    _object_count as integer
+    object_pressed as byte
+    schar          as byte
+    local_round_button as ^TButton_Round
+    exec_round_button as ^TButton_Round
+    round_button_order as integer
+
+dim CurrentScreen as ^TScreen
+dim ashift, afn, aaltgr, actrl as word
+
+const Screen1_Buttons_Round as TButton_RoundPtr[64]  code forward
+
+dim Screen1           as TScreen
+dim ButtonRound1 as TButton_Round
+    ButtonRound1_Caption as string[2]
+
+dim ButtonRound181 as TButton_Round
+    ButtonRound181_Caption as string[2]
+
+dim ButtonRound182 as TButton_Round
+    ButtonRound182_Caption as string[2]
+
+dim ButtonRound183 as TButton_Round
+    ButtonRound183_Caption as string[2]
+
+dim ButtonRound184 as TButton_Round
+    ButtonRound184_Caption as string[2]
+
+dim ButtonRound185 as TButton_Round
+    ButtonRound185_Caption as string[2]
+
+dim ButtonRound186 as TButton_Round
+    ButtonRound186_Caption as string[2]
+
+dim ButtonRound187 as TButton_Round
+    ButtonRound187_Caption as string[2]
+
+dim ButtonRound188 as TButton_Round
+    ButtonRound188_Caption as string[2]
+
+dim ButtonRound189 as TButton_Round
+    ButtonRound189_Caption as string[3]
+
+dim ButtonRound190 as TButton_Round
+    ButtonRound190_Caption as string[3]
+
+dim ButtonRound191 as TButton_Round
+    ButtonRound191_Caption as string[3]
+
+dim ButtonRound192 as TButton_Round
+    ButtonRound192_Caption as string[3]
+
+dim ButtonRound193 as TButton_Round
+    ButtonRound193_Caption as string[3]
+
+dim ButtonRound194 as TButton_Round
+    ButtonRound194_Caption as string[1]
+
+dim ButtonRound195 as TButton_Round
+    ButtonRound195_Caption as string[1]
+
+dim ButtonRound196 as TButton_Round
+    ButtonRound196_Caption as string[1]
+
+dim ButtonRound197 as TButton_Round
+    ButtonRound197_Caption as string[1]
+
+dim ButtonRound198 as TButton_Round
+    ButtonRound198_Caption as string[1]
+
+dim ButtonRound199 as TButton_Round
+    ButtonRound199_Caption as string[1]
+
+dim ButtonRound200 as TButton_Round
+    ButtonRound200_Caption as string[1]
+
+dim ButtonRound201 as TButton_Round
+    ButtonRound201_Caption as string[1]
+
+dim ButtonRound202 as TButton_Round
+    ButtonRound202_Caption as string[1]
+
+dim ButtonRound203 as TButton_Round
+    ButtonRound203_Caption as string[1]
+
+dim ButtonRound204 as TButton_Round
+    ButtonRound204_Caption as string[1]
+
+dim ButtonRound205 as TButton_Round
+    ButtonRound205_Caption as string[1]
+
+dim ButtonRound206 as TButton_Round
+    ButtonRound206_Caption as string[4]
+
+dim ButtonRound207 as TButton_Round
+    ButtonRound207_Caption as string[4]
+
+dim ButtonRound208 as TButton_Round
+    ButtonRound208_Caption as string[1]
+
+dim ButtonRound209 as TButton_Round
+    ButtonRound209_Caption as string[1]
+
+dim ButtonRound210 as TButton_Round
+    ButtonRound210_Caption as string[1]
+
+dim ButtonRound211 as TButton_Round
+    ButtonRound211_Caption as string[1]
+
+dim ButtonRound212 as TButton_Round
+    ButtonRound212_Caption as string[1]
+
+dim ButtonRound213 as TButton_Round
+    ButtonRound213_Caption as string[1]
+
+dim ButtonRound214 as TButton_Round
+    ButtonRound214_Caption as string[1]
+
+dim ButtonRound215 as TButton_Round
+    ButtonRound215_Caption as string[1]
+
+dim ButtonRound216 as TButton_Round
+    ButtonRound216_Caption as string[1]
+
+dim ButtonRound217 as TButton_Round
+    ButtonRound217_Caption as string[1]
+
+dim ButtonRound218 as TButton_Round
+    ButtonRound218_Caption as string[5]
+
+dim ButtonRound219 as TButton_Round
+    ButtonRound219_Caption as string[5]
+
+dim ButtonRound220 as TButton_Round
+    ButtonRound220_Caption as string[1]
+
+dim ButtonRound221 as TButton_Round
+    ButtonRound221_Caption as string[1]
+
+dim ButtonRound222 as TButton_Round
+    ButtonRound222_Caption as string[1]
+
+dim ButtonRound223 as TButton_Round
+    ButtonRound223_Caption as string[1]
+
+dim ButtonRound224 as TButton_Round
+    ButtonRound224_Caption as string[1]
+
+dim ButtonRound225 as TButton_Round
+    ButtonRound225_Caption as string[1]
+
+dim ButtonRound226 as TButton_Round
+    ButtonRound226_Caption as string[1]
+
+dim ButtonRound227 as TButton_Round
+    ButtonRound227_Caption as string[1]
+
+dim ButtonRound228 as TButton_Round
+    ButtonRound228_Caption as string[1]
+
+dim ButtonRound229 as TButton_Round
+    ButtonRound229_Caption as string[1]
+
+dim ButtonRound230 as TButton_Round
+    ButtonRound230_Caption as string[1]
+
+dim ButtonRound231 as TButton_Round
+    ButtonRound231_Caption as string[1]
+
+dim ButtonRound232 as TButton_Round
+    ButtonRound232_Caption as string[2]
+
+dim ButtonRound233 as TButton_Round
+    ButtonRound233_Caption as string[4]
+
+dim ButtonRound234 as TButton_Round
+    ButtonRound234_Caption as string[3]
+
+dim ButtonRound235 as TButton_Round
+    ButtonRound235_Caption as string[3]
+
+dim ButtonRound236 as TButton_Round
+    ButtonRound236_Caption as string[1]
+
+dim ButtonRound240 as TButton_Round
+    ButtonRound240_Caption as string[5]
+
+dim ButtonRound241 as TButton_Round
+    ButtonRound241_Caption as string[1]
+
+dim ButtonRound242 as TButton_Round
+    ButtonRound242_Caption as string[1]
+
+dim ButtonRound2 as TButton_Round
+    ButtonRound2_Caption as string[2]
+
+dim ButtonRound3 as TButton_Round
+    ButtonRound3_Caption as string[2]
+
+dim ButtonRound4 as TButton_Round
+    ButtonRound4_Caption as string[1]
+
+dim ButtonRound5 as TButton_Round
+    ButtonRound5_Caption as string[1]
+
+      const Screen1_Buttons_Round  as TButton_RoundPtr[64] =
+         (
+         @ButtonRound1,        
+         @ButtonRound181,      
+         @ButtonRound182,      
+         @ButtonRound183,      
+         @ButtonRound184,      
+         @ButtonRound185,      
+         @ButtonRound186,      
+         @ButtonRound187,      
+         @ButtonRound188,      
+         @ButtonRound189,      
+         @ButtonRound190,      
+         @ButtonRound191,      
+         @ButtonRound192,      
+         @ButtonRound193,      
+         @ButtonRound194,      
+         @ButtonRound195,      
+         @ButtonRound196,      
+         @ButtonRound197,      
+         @ButtonRound198,      
+         @ButtonRound199,      
+         @ButtonRound200,      
+         @ButtonRound201,      
+         @ButtonRound202,      
+         @ButtonRound203,      
+         @ButtonRound204,      
+         @ButtonRound205,      
+         @ButtonRound206,      
+         @ButtonRound207,      
+         @ButtonRound208,      
+         @ButtonRound209,      
+         @ButtonRound210,      
+         @ButtonRound211,      
+         @ButtonRound212,      
+         @ButtonRound213,      
+         @ButtonRound214,      
+         @ButtonRound215,      
+         @ButtonRound216,      
+         @ButtonRound217,      
+         @ButtonRound218,      
+         @ButtonRound219,      
+         @ButtonRound220,      
+         @ButtonRound221,      
+         @ButtonRound222,      
+         @ButtonRound223,      
+         @ButtonRound224,      
+         @ButtonRound225,      
+         @ButtonRound226,      
+         @ButtonRound227,      
+         @ButtonRound228,      
+         @ButtonRound229,      
+         @ButtonRound230,      
+         @ButtonRound231,      
+         @ButtonRound232,      
+         @ButtonRound233,      
+         @ButtonRound234,      
+         @ButtonRound235,      
+         @ButtonRound236,      
+         @ButtonRound240,      
+         @ButtonRound241,      
+         @ButtonRound242,      
+         @ButtonRound2,        
+         @ButtonRound3,        
+         @ButtonRound4,        
+         @ButtonRound5         
+         ) code
+
+const Screen2_Buttons_Round as TButton_RoundPtr[64]  code forward
+
+dim Screen2           as TScreen
+dim ButtonRound6 as TButton_Round
+    ButtonRound6_Caption as string[1]
+
+dim ButtonRound7 as TButton_Round
+    ButtonRound7_Caption as string[1]
+
+dim ButtonRound8 as TButton_Round
+    ButtonRound8_Caption as string[1]
+
+dim ButtonRound9 as TButton_Round
+    ButtonRound9_Caption as string[1]
+
+dim ButtonRound10 as TButton_Round
+    ButtonRound10_Caption as string[1]
+
+dim ButtonRound11 as TButton_Round
+    ButtonRound11_Caption as string[1]
+
+dim ButtonRound12 as TButton_Round
+    ButtonRound12_Caption as string[1]
+
+dim ButtonRound13 as TButton_Round
+    ButtonRound13_Caption as string[1]
+
+dim ButtonRound14 as TButton_Round
+    ButtonRound14_Caption as string[1]
+
+dim ButtonRound15 as TButton_Round
+    ButtonRound15_Caption as string[1]
+
+dim ButtonRound16 as TButton_Round
+    ButtonRound16_Caption as string[1]
+
+dim ButtonRound17 as TButton_Round
+    ButtonRound17_Caption as string[1]
+
+dim ButtonRound18 as TButton_Round
+    ButtonRound18_Caption as string[4]
+
+dim ButtonRound19 as TButton_Round
+    ButtonRound19_Caption as string[3]
+
+dim ButtonRound20 as TButton_Round
+    ButtonRound20_Caption as string[1]
+
+dim ButtonRound21 as TButton_Round
+    ButtonRound21_Caption as string[1]
+
+dim ButtonRound22 as TButton_Round
+    ButtonRound22_Caption as string[1]
+
+dim ButtonRound23 as TButton_Round
+    ButtonRound23_Caption as string[1]
+
+dim ButtonRound24 as TButton_Round
+    ButtonRound24_Caption as string[1]
+
+dim ButtonRound25 as TButton_Round
+    ButtonRound25_Caption as string[1]
+
+dim ButtonRound26 as TButton_Round
+    ButtonRound26_Caption as string[1]
+
+dim ButtonRound27 as TButton_Round
+    ButtonRound27_Caption as string[1]
+
+dim ButtonRound28 as TButton_Round
+    ButtonRound28_Caption as string[1]
+
+dim ButtonRound29 as TButton_Round
+    ButtonRound29_Caption as string[1]
+
+dim ButtonRound30 as TButton_Round
+    ButtonRound30_Caption as string[1]
+
+dim ButtonRound31 as TButton_Round
+    ButtonRound31_Caption as string[1]
+
+dim ButtonRound32 as TButton_Round
+    ButtonRound32_Caption as string[4]
+
+dim ButtonRound33 as TButton_Round
+    ButtonRound33_Caption as string[4]
+
+dim ButtonRound34 as TButton_Round
+    ButtonRound34_Caption as string[1]
+
+dim ButtonRound35 as TButton_Round
+    ButtonRound35_Caption as string[1]
+
+dim ButtonRound36 as TButton_Round
+    ButtonRound36_Caption as string[1]
+
+dim ButtonRound37 as TButton_Round
+    ButtonRound37_Caption as string[1]
+
+dim ButtonRound38 as TButton_Round
+    ButtonRound38_Caption as string[1]
+
+dim ButtonRound39 as TButton_Round
+    ButtonRound39_Caption as string[1]
+
+dim ButtonRound40 as TButton_Round
+    ButtonRound40_Caption as string[1]
+
+dim ButtonRound41 as TButton_Round
+    ButtonRound41_Caption as string[1]
+
+dim ButtonRound42 as TButton_Round
+    ButtonRound42_Caption as string[1]
+
+dim ButtonRound43 as TButton_Round
+    ButtonRound43_Caption as string[1]
+
+dim ButtonRound44 as TButton_Round
+    ButtonRound44_Caption as string[5]
+
+dim ButtonRound45 as TButton_Round
+    ButtonRound45_Caption as string[5]
+
+dim ButtonRound46 as TButton_Round
+    ButtonRound46_Caption as string[1]
+
+dim ButtonRound47 as TButton_Round
+    ButtonRound47_Caption as string[1]
+
+dim ButtonRound48 as TButton_Round
+    ButtonRound48_Caption as string[1]
+
+dim ButtonRound49 as TButton_Round
+    ButtonRound49_Caption as string[1]
+
+dim ButtonRound50 as TButton_Round
+    ButtonRound50_Caption as string[1]
+
+dim ButtonRound51 as TButton_Round
+    ButtonRound51_Caption as string[1]
+
+dim ButtonRound52 as TButton_Round
+    ButtonRound52_Caption as string[1]
+
+dim ButtonRound53 as TButton_Round
+    ButtonRound53_Caption as string[1]
+
+dim ButtonRound54 as TButton_Round
+    ButtonRound54_Caption as string[1]
+
+dim ButtonRound55 as TButton_Round
+    ButtonRound55_Caption as string[1]
+
+dim ButtonRound56 as TButton_Round
+    ButtonRound56_Caption as string[1]
+
+dim ButtonRound57 as TButton_Round
+    ButtonRound57_Caption as string[1]
+
+dim ButtonRound58 as TButton_Round
+    ButtonRound58_Caption as string[1]
+
+dim ButtonRound59 as TButton_Round
+    ButtonRound59_Caption as string[1]
+
+dim ButtonRound60 as TButton_Round
+    ButtonRound60_Caption as string[1]
+
+dim ButtonRound237 as TButton_Round
+    ButtonRound237_Caption as string[1]
+
+dim ButtonRound238 as TButton_Round
+    ButtonRound238_Caption as string[1]
+
+dim ButtonRound239 as TButton_Round
+    ButtonRound239_Caption as string[5]
+
+dim ButtonRound243 as TButton_Round
+    ButtonRound243_Caption as string[1]
+
+dim ButtonRound244 as TButton_Round
+    ButtonRound244_Caption as string[1]
+
+dim ButtonRound245 as TButton_Round
+    ButtonRound245_Caption as string[2]
+
+dim ButtonRound246 as TButton_Round
+    ButtonRound246_Caption as string[2]
+
+dim ButtonRound247 as TButton_Round
+    ButtonRound247_Caption as string[1]
+
+dim ButtonRound248 as TButton_Round
+    ButtonRound248_Caption as string[1]
+
+      const Screen2_Buttons_Round  as TButton_RoundPtr[64] =
+         (
+         @ButtonRound6,        
+         @ButtonRound7,        
+         @ButtonRound8,        
+         @ButtonRound9,        
+         @ButtonRound10,       
+         @ButtonRound11,       
+         @ButtonRound12,       
+         @ButtonRound13,       
+         @ButtonRound14,       
+         @ButtonRound15,       
+         @ButtonRound16,       
+         @ButtonRound17,       
+         @ButtonRound18,       
+         @ButtonRound19,       
+         @ButtonRound20,       
+         @ButtonRound21,       
+         @ButtonRound22,       
+         @ButtonRound23,       
+         @ButtonRound24,       
+         @ButtonRound25,       
+         @ButtonRound26,       
+         @ButtonRound27,       
+         @ButtonRound28,       
+         @ButtonRound29,       
+         @ButtonRound30,       
+         @ButtonRound31,       
+         @ButtonRound32,       
+         @ButtonRound33,       
+         @ButtonRound34,       
+         @ButtonRound35,       
+         @ButtonRound36,       
+         @ButtonRound37,       
+         @ButtonRound38,       
+         @ButtonRound39,       
+         @ButtonRound40,       
+         @ButtonRound41,       
+         @ButtonRound42,       
+         @ButtonRound43,       
+         @ButtonRound44,       
+         @ButtonRound45,       
+         @ButtonRound46,       
+         @ButtonRound47,       
+         @ButtonRound48,       
+         @ButtonRound49,       
+         @ButtonRound50,       
+         @ButtonRound51,       
+         @ButtonRound52,       
+         @ButtonRound53,       
+         @ButtonRound54,       
+         @ButtonRound55,       
+         @ButtonRound56,       
+         @ButtonRound57,       
+         @ButtonRound58,       
+         @ButtonRound59,       
+         @ButtonRound60,       
+         @ButtonRound237,      
+         @ButtonRound238,      
+         @ButtonRound239,      
+         @ButtonRound243,      
+         @ButtonRound244,      
+         @ButtonRound245,      
+         @ButtonRound246,      
+         @ButtonRound247,      
+         @ButtonRound248       
+         ) code
+
+const Screen3_Buttons_Round as TButton_RoundPtr[64]  code forward
+
+dim Screen4           as TScreen
+dim ButtonRound249 as TButton_Round
+    ButtonRound249_Caption as string[1]
+
+dim ButtonRound250 as TButton_Round
+    ButtonRound250_Caption as string[1]
+
+dim ButtonRound251 as TButton_Round
+    ButtonRound251_Caption as string[1]
+
+dim ButtonRound252 as TButton_Round
+    ButtonRound252_Caption as string[1]
+
+dim ButtonRound253 as TButton_Round
+    ButtonRound253_Caption as string[1]
+
+dim ButtonRound254 as TButton_Round
+    ButtonRound254_Caption as string[1]
+
+dim ButtonRound255 as TButton_Round
+    ButtonRound255_Caption as string[1]
+
+dim ButtonRound256 as TButton_Round
+    ButtonRound256_Caption as string[1]
+
+dim ButtonRound257 as TButton_Round
+    ButtonRound257_Caption as string[1]
+
+dim ButtonRound258 as TButton_Round
+    ButtonRound258_Caption as string[1]
+
+dim ButtonRound259 as TButton_Round
+    ButtonRound259_Caption as string[1]
+
+dim ButtonRound260 as TButton_Round
+    ButtonRound260_Caption as string[1]
+
+dim ButtonRound261 as TButton_Round
+    ButtonRound261_Caption as string[3]
+
+dim ButtonRound262 as TButton_Round
+    ButtonRound262_Caption as string[3]
+
+dim ButtonRound263 as TButton_Round
+    ButtonRound263_Caption as string[1]
+
+dim ButtonRound264 as TButton_Round
+    ButtonRound264_Caption as string[1]
+
+dim ButtonRound265 as TButton_Round
+    ButtonRound265_Caption as string[1]
+
+dim ButtonRound266 as TButton_Round
+    ButtonRound266_Caption as string[1]
+
+dim ButtonRound267 as TButton_Round
+    ButtonRound267_Caption as string[1]
+
+dim ButtonRound268 as TButton_Round
+    ButtonRound268_Caption as string[1]
+
+dim ButtonRound269 as TButton_Round
+    ButtonRound269_Caption as string[1]
+
+dim ButtonRound270 as TButton_Round
+    ButtonRound270_Caption as string[1]
+
+dim ButtonRound271 as TButton_Round
+    ButtonRound271_Caption as string[1]
+
+dim ButtonRound272 as TButton_Round
+    ButtonRound272_Caption as string[1]
+
+dim ButtonRound273 as TButton_Round
+    ButtonRound273_Caption as string[1]
+
+dim ButtonRound274 as TButton_Round
+    ButtonRound274_Caption as string[1]
+
+dim ButtonRound275 as TButton_Round
+    ButtonRound275_Caption as string[1]
+
+dim ButtonRound276 as TButton_Round
+    ButtonRound276_Caption as string[1]
+
+dim ButtonRound277 as TButton_Round
+    ButtonRound277_Caption as string[1]
+
+dim ButtonRound278 as TButton_Round
+    ButtonRound278_Caption as string[1]
+
+dim ButtonRound279 as TButton_Round
+    ButtonRound279_Caption as string[1]
+
+dim ButtonRound280 as TButton_Round
+    ButtonRound280_Caption as string[1]
+
+dim ButtonRound281 as TButton_Round
+    ButtonRound281_Caption as string[1]
+
+dim ButtonRound282 as TButton_Round
+    ButtonRound282_Caption as string[1]
+
+dim ButtonRound283 as TButton_Round
+    ButtonRound283_Caption as string[1]
+
+dim ButtonRound284 as TButton_Round
+    ButtonRound284_Caption as string[1]
+
+dim ButtonRound285 as TButton_Round
+    ButtonRound285_Caption as string[1]
+
+dim ButtonRound286 as TButton_Round
+    ButtonRound286_Caption as string[1]
+
+dim ButtonRound287 as TButton_Round
+    ButtonRound287_Caption as string[5]
+
+dim ButtonRound288 as TButton_Round
+    ButtonRound288_Caption as string[1]
+
+dim ButtonRound289 as TButton_Round
+    ButtonRound289_Caption as string[1]
+
+dim ButtonRound290 as TButton_Round
+    ButtonRound290_Caption as string[1]
+
+dim ButtonRound291 as TButton_Round
+    ButtonRound291_Caption as string[1]
+
+dim ButtonRound292 as TButton_Round
+    ButtonRound292_Caption as string[1]
+
+dim ButtonRound293 as TButton_Round
+    ButtonRound293_Caption as string[1]
+
+dim ButtonRound294 as TButton_Round
+    ButtonRound294_Caption as string[1]
+
+dim ButtonRound295 as TButton_Round
+    ButtonRound295_Caption as string[1]
+
+dim ButtonRound296 as TButton_Round
+    ButtonRound296_Caption as string[1]
+
+dim ButtonRound297 as TButton_Round
+    ButtonRound297_Caption as string[1]
+
+dim ButtonRound298 as TButton_Round
+    ButtonRound298_Caption as string[1]
+
+dim ButtonRound299 as TButton_Round
+    ButtonRound299_Caption as string[1]
+
+dim ButtonRound300 as TButton_Round
+    ButtonRound300_Caption as string[1]
+
+dim ButtonRound301 as TButton_Round
+    ButtonRound301_Caption as string[1]
+
+dim ButtonRound302 as TButton_Round
+    ButtonRound302_Caption as string[1]
+
+dim ButtonRound303 as TButton_Round
+    ButtonRound303_Caption as string[1]
+
+dim ButtonRound304 as TButton_Round
+    ButtonRound304_Caption as string[1]
+
+dim ButtonRound305 as TButton_Round
+    ButtonRound305_Caption as string[1]
+
+dim ButtonRound306 as TButton_Round
+    ButtonRound306_Caption as string[5]
+
+dim ButtonRound307 as TButton_Round
+    ButtonRound307_Caption as string[1]
+
+dim ButtonRound308 as TButton_Round
+    ButtonRound308_Caption as string[1]
+
+dim ButtonRound309 as TButton_Round
+    ButtonRound309_Caption as string[2]
+
+dim ButtonRound310 as TButton_Round
+    ButtonRound310_Caption as string[2]
+
+dim ButtonRound311 as TButton_Round
+    ButtonRound311_Caption as string[1]
+
+dim ButtonRound312 as TButton_Round
+    ButtonRound312_Caption as string[1]
+
+      const Screen3_Buttons_Round  as TButton_RoundPtr[64] =
+         (
+         @ButtonRound249,      
+         @ButtonRound250,      
+         @ButtonRound251,      
+         @ButtonRound252,      
+         @ButtonRound253,      
+         @ButtonRound254,      
+         @ButtonRound255,      
+         @ButtonRound256,      
+         @ButtonRound257,      
+         @ButtonRound258,      
+         @ButtonRound259,      
+         @ButtonRound260,      
+         @ButtonRound261,      
+         @ButtonRound262,      
+         @ButtonRound263,      
+         @ButtonRound264,      
+         @ButtonRound265,      
+         @ButtonRound266,      
+         @ButtonRound267,      
+         @ButtonRound268,      
+         @ButtonRound269,      
+         @ButtonRound270,      
+         @ButtonRound271,      
+         @ButtonRound272,      
+         @ButtonRound273,      
+         @ButtonRound274,      
+         @ButtonRound275,      
+         @ButtonRound276,      
+         @ButtonRound277,      
+         @ButtonRound278,      
+         @ButtonRound279,      
+         @ButtonRound280,      
+         @ButtonRound281,      
+         @ButtonRound282,      
+         @ButtonRound283,      
+         @ButtonRound284,      
+         @ButtonRound285,      
+         @ButtonRound286,      
+         @ButtonRound287,      
+         @ButtonRound288,      
+         @ButtonRound289,      
+         @ButtonRound290,      
+         @ButtonRound291,      
+         @ButtonRound292,      
+         @ButtonRound293,      
+         @ButtonRound294,      
+         @ButtonRound295,      
+         @ButtonRound296,      
+         @ButtonRound297,      
+         @ButtonRound298,      
+         @ButtonRound299,      
+         @ButtonRound300,      
+         @ButtonRound301,      
+         @ButtonRound302,      
+         @ButtonRound303,      
+         @ButtonRound304,      
+         @ButtonRound305,      
+         @ButtonRound306,      
+         @ButtonRound307,      
+         @ButtonRound308,      
+         @ButtonRound309,      
+         @ButtonRound310,      
+         @ButtonRound311,      
+         @ButtonRound312       
+         ) code
+
+
+
+implements                                                                      '--------------------------------------------------------------------
+
+sub procedure execute_shift  forward
+sub procedure execute_fn     forward
+sub procedure execute_altgr  forward
+sub procedure execute_ctrl   forward
+
+sub procedure tft_clear_screen(dim coleur as word)
+    TFT_Set_Pen(coleur, 1)
+    TFT_Set_Brush(1, coleur, 0, 0, 0, 0)
+    TFT_Rectangle(0, 241, 799, 479)
+end sub
+
+
+sub procedure InitializeTouchPanel() ' static
+  PenDown = 0
+  PressedObject = 0
+  PressedObjectType = -1
+end sub
+
+sub procedure InitializeObjects()    ' static
+  Screen1.Color                     = 0x1310
+  Screen1.Width                     = 800
+  Screen1.Height                    = 480
+  Screen1.Buttons_RoundCount        = 64
+  Screen1.Buttons_Round             = @Screen1_Buttons_Round
+  Screen1.ObjectsCount              = 64
+  Screen1.Pen_Width                 = 1
+  Screen1.Pen_Color                 = 0x0000
+  Screen1.TextAlign                 = _taCenter
+  Screen1.TextAlignVertical         = _tavMiddle
+  Screen1.FontName                  = @Arial16x19_Bold   '@Tahoma11x13_Regular
+  Screen1.Font_Color                = 0x0000
+  Screen1.Gradient                  = 1
+  Screen1.Gradient_Orientation      = 0
+  Screen1.Gradient_Start_Color      = 0xFFFF
+  Screen1.Gradient_End_Color        = 0x5C57
+  Screen1.Button_Color              = 0x5C57
+  Screen1.Press_Color               = 0xE71C
+  Screen1.Corner_Radius             = 3
+
+  Screen2.Color                     = 0x1310  '0x5AEB
+  Screen2.Width                     = 800
+  Screen2.Height                    = 480
+  Screen2.Buttons_RoundCount        = 64
+  Screen2.Buttons_Round             = @Screen2_Buttons_Round
+  Screen2.ObjectsCount              = 64
+  Screen2.Pen_Width                 = 1
+  Screen2.Pen_Color                 = 0x0000
+  Screen2.TextAlign                 = _taCenter
+  Screen2.TextAlignVertical         = _tavMiddle
+  Screen2.FontName                  = @Arial16x19_Bold  '@Tahoma11x13_Regular
+  Screen2.Font_Color                = 0x0000
+  Screen2.Gradient                  = 1
+  Screen2.Gradient_Orientation      = 0
+  Screen2.Gradient_Start_Color      = 0xFFFF
+  Screen2.Gradient_End_Color        = 0x5C57
+  Screen2.Button_Color              = 0x5C57
+  Screen2.Press_Color               = 0xE71C
+  Screen2.Corner_Radius             = 3
+
+  Screen4.Color                     = 0x1310  '0x5AEB
+  Screen4.Width                     = 800
+  Screen4.Height                    = 480
+  Screen4.Buttons_RoundCount        = 64
+  Screen4.Buttons_Round             = @Screen3_Buttons_Round
+  Screen4.ObjectsCount              = 64
+  Screen4.Pen_Width                 = 1
+  Screen4.Pen_Color                 = 0x0000
+  Screen4.TextAlign                 = _taCenter
+  Screen4.TextAlignVertical         = _tavMiddle
+  Screen4.FontName                  = @Arial16x19_Bold   '@Tahoma11x13_Regular
+  Screen4.Font_Color                = 0x0000
+  Screen4.Gradient                  = 1
+  Screen4.Gradient_Orientation      = 0
+  Screen4.Gradient_Start_Color      = 0xFFFF
+  Screen4.Gradient_End_Color        = 0x5C57
+  Screen4.Button_Color              = 0x5C57
+  Screen4.Press_Color               = 0xE71C
+  Screen4.Corner_Radius             = 3
+
+
+  ButtonRound1.OwnerScreenAddress  = @Screen1
+  ButtonRound1.Order               = 0
+  ButtonRound1.Left_               = 28
+  ButtonRound1.Top                 = 250
+  ButtonRound1.Width               = 45
+  ButtonRound1.Height              = 40
+  'ButtonRound1.Visible             = 1
+  ButtonRound1.Active              = 1
+  ButtonRound1.Caption             = @ButtonRound1_Caption
+  if afn then
+     ButtonRound1_Caption          = "F1"
+  else
+      ButtonRound1_Caption         = "^"
+  end if
+  ButtonRound1.OnDownPtr           = 0
+  ButtonRound1.OnClickPtr          = 0
+  if afn then
+     ButtonRound1.OnPressPtr       = 201
+  else
+      ButtonRound1.OnPressPtr      = 0
+  end if
+
+  ButtonRound181.OwnerScreenAddress  = @Screen1
+  ButtonRound181.Order               = 1
+  ButtonRound181.Left_               = 83
+  ButtonRound181.Top                 = 250
+  ButtonRound181.Width               = 45
+  ButtonRound181.Height              = 40
+  'ButtonRound181.Visible             = 1
+  ButtonRound181.Active              = 1
+  ButtonRound181.Caption             = @ButtonRound181_Caption
+  if afn then
+     ButtonRound181_Caption          = "F2"
+  else
+      ButtonRound181_Caption         = "1"
+  end if
+  ButtonRound181.OnDownPtr           = 0
+  ButtonRound181.OnClickPtr          = 0
+  if afn then
+     ButtonRound181.OnPressPtr       = 202
+  else
+      ButtonRound181.OnPressPtr      = 0
+  end if
+
+  ButtonRound182.OwnerScreenAddress  = @Screen1
+  ButtonRound182.Order               = 2
+  ButtonRound182.Left_               = 138
+  ButtonRound182.Top                 = 250
+  ButtonRound182.Width               = 45
+  ButtonRound182.Height              = 40
+  'ButtonRound182.Visible             = 1
+  ButtonRound182.Active              = 1
+  ButtonRound182.Caption             = @ButtonRound182_Caption
+  if afn then
+     ButtonRound182_Caption          = "F3"
+  else
+      ButtonRound182_Caption         = "2"
+  end if
+  ButtonRound182.OnDownPtr           = 0
+  ButtonRound182.OnClickPtr          = 0
+  if afn then
+     ButtonRound182.OnPressPtr       = 203
+  else
+      ButtonRound182.OnPressPtr      = 0
+  end if
+
+  ButtonRound183.OwnerScreenAddress  = @Screen1
+  ButtonRound183.Order               = 3
+  ButtonRound183.Left_               = 193
+  ButtonRound183.Top                 = 250
+  ButtonRound183.Width               = 45
+  ButtonRound183.Height              = 40
+  'ButtonRound183.Visible             = 1
+  ButtonRound183.Active              = 1
+  ButtonRound183.Caption             = @ButtonRound183_Caption
+  if afn then
+     ButtonRound183_Caption          = "F4"
+  else
+      ButtonRound183_Caption         = "3"
+  end if
+  ButtonRound183.OnDownPtr           = 0
+  ButtonRound183.OnClickPtr          = 0
+  if afn then
+     ButtonRound183.OnPressPtr       = 204
+  else
+      ButtonRound183.OnPressPtr      = 0
+  end if
+
+  ButtonRound184.OwnerScreenAddress  = @Screen1
+  ButtonRound184.Order               = 4
+  ButtonRound184.Left_               = 248
+  ButtonRound184.Top                 = 250
+  ButtonRound184.Width               = 45
+  ButtonRound184.Height              = 40
+  'ButtonRound184.Visible             = 1
+  ButtonRound184.Active              = 1
+  ButtonRound184.Caption             = @ButtonRound184_Caption
+  if afn then
+     ButtonRound184_Caption          = "F5"
+  else
+      ButtonRound184_Caption         = "4"
+  end if
+  ButtonRound184.OnDownPtr           = 0
+  ButtonRound184.OnClickPtr          = 0
+  if afn then
+     ButtonRound184.OnPressPtr       = 205
+  else
+      ButtonRound184.OnPressPtr      = 0
+  end if
+
+  ButtonRound185.OwnerScreenAddress  = @Screen1
+  ButtonRound185.Order               = 5
+  ButtonRound185.Left_               = 303
+  ButtonRound185.Top                 = 250
+  ButtonRound185.Width               = 45
+  ButtonRound185.Height              = 40
+  'ButtonRound185.Visible             = 1
+  ButtonRound185.Active              = 1
+  ButtonRound185.Caption             = @ButtonRound185_Caption
+  if afn then
+     ButtonRound185_Caption          = "F6"
+  else
+      ButtonRound185_Caption         = "5"
+  end if
+  ButtonRound185.OnDownPtr           = 0
+  ButtonRound185.OnClickPtr          = 0
+  if afn then
+     ButtonRound185.OnPressPtr       = 206
+  else
+      ButtonRound185.OnPressPtr      = 0
+  end if
+
+  ButtonRound186.OwnerScreenAddress  = @Screen1
+  ButtonRound186.Order               = 6
+  ButtonRound186.Left_               = 358
+  ButtonRound186.Top                 = 250
+  ButtonRound186.Width               = 45
+  ButtonRound186.Height              = 40
+  'ButtonRound186.Visible             = 1
+  ButtonRound186.Active              = 1
+  ButtonRound186.Caption             = @ButtonRound186_Caption
+  if afn then
+     ButtonRound186_Caption          = "F7"
+  else
+      ButtonRound186_Caption         = "6"
+  end if
+  ButtonRound186.OnDownPtr           = 0
+  ButtonRound186.OnClickPtr          = 0
+  if afn then
+     ButtonRound186.OnPressPtr       = 207
+  else
+      ButtonRound186.OnPressPtr      = 0
+  end if
+
+  ButtonRound187.OwnerScreenAddress  = @Screen1
+  ButtonRound187.Order               = 7
+  ButtonRound187.Left_               = 413
+  ButtonRound187.Top                 = 250
+  ButtonRound187.Width               = 45
+  ButtonRound187.Height              = 40
+  'ButtonRound187.Visible             = 1
+  ButtonRound187.Active              = 1
+  ButtonRound187.Caption             = @ButtonRound187_Caption
+  if afn then
+     ButtonRound187_Caption          = "F8"
+  else
+      ButtonRound187_Caption         = "7"
+  end if
+  ButtonRound187.OnDownPtr           = 0
+  ButtonRound187.OnClickPtr          = 0
+  if afn then
+     ButtonRound187.OnPressPtr       = 208
+  else
+      ButtonRound187.OnPressPtr      = 0
+  end if
+
+  ButtonRound188.OwnerScreenAddress  = @Screen1
+  ButtonRound188.Order               = 8
+  ButtonRound188.Left_               = 468
+  ButtonRound188.Top                 = 250
+  ButtonRound188.Width               = 45
+  ButtonRound188.Height              = 40
+  'ButtonRound188.Visible             = 1
+  ButtonRound188.Active              = 1
+  ButtonRound188.Caption             = @ButtonRound188_Caption
+  if afn then
+     ButtonRound188_Caption          = "F9"
+  else
+      ButtonRound188_Caption         = "8"
+  end if
+  ButtonRound188.OnDownPtr           = 0
+  ButtonRound188.OnClickPtr          = 0
+  if afn then
+     ButtonRound188.OnPressPtr       = 209
+  else
+      ButtonRound188.OnPressPtr      = 0
+  end if
+
+  ButtonRound189.OwnerScreenAddress  = @Screen1
+  ButtonRound189.Order               = 9
+  ButtonRound189.Left_               = 523
+  ButtonRound189.Top                 = 250
+  ButtonRound189.Width               = 45
+  ButtonRound189.Height              = 40
+  'ButtonRound189.Visible             = 1
+  ButtonRound189.Active              = 1
+  ButtonRound189.Caption             = @ButtonRound189_Caption
+  if afn then
+     ButtonRound189_Caption          = "F10"
+  else
+      ButtonRound189_Caption         = "9"
+  end if
+  ButtonRound189.OnDownPtr           = 0
+  ButtonRound189.OnClickPtr          = 0
+  if afn then
+     ButtonRound189.OnPressPtr       = 210
+  else
+      ButtonRound189.OnPressPtr      = 0
+  end if
+
+  ButtonRound190.OwnerScreenAddress  = @Screen1
+  ButtonRound190.Order               = 10
+  ButtonRound190.Left_               = 578
+  ButtonRound190.Top                 = 250
+  ButtonRound190.Width               = 45
+  ButtonRound190.Height              = 40
+  'ButtonRound190.Visible             = 1
+  ButtonRound190.Active              = 1
+  ButtonRound190.Caption             = @ButtonRound190_Caption
+  if afn then
+     ButtonRound190_Caption          = "F11"
+  else
+      ButtonRound190_Caption         = "0"
+  end if
+  ButtonRound190.OnDownPtr           = 0
+  ButtonRound190.OnClickPtr          = 0
+  if afn then
+     ButtonRound190.OnPressPtr       = 211
+  else
+      ButtonRound190.OnPressPtr      = 0
+  end if
+
+  ButtonRound191.OwnerScreenAddress  = @Screen1
+  ButtonRound191.Order               = 11
+  ButtonRound191.Left_               = 633
+  ButtonRound191.Top                 = 250
+  ButtonRound191.Width               = 45
+  ButtonRound191.Height              = 40
+  'ButtonRound191.Visible             = 1
+  ButtonRound191.Active              = 1
+  ButtonRound191.Caption             = @ButtonRound191_Caption
+  if afn then
+     ButtonRound191_Caption          = "F12"
+  else
+      ButtonRound191_Caption         = "ß"
+  end if
+  ButtonRound191.OnDownPtr           = 0
+  ButtonRound191.OnClickPtr          = 0
+  if afn then
+     ButtonRound191.OnPressPtr       = 212
+  else
+      ButtonRound191.OnPressPtr      = 0
+  end if
+
+  ButtonRound192.OwnerScreenAddress  = @Screen1
+  ButtonRound192.Order               = 12
+  ButtonRound192.Left_               = 688
+  ButtonRound192.Top                 = 250
+  ButtonRound192.Width               = 75
+  ButtonRound192.Height              = 40
+'  ButtonRound192.Visible             = 1
+  ButtonRound192.Active              = 1
+  ButtonRound192.Caption             = @ButtonRound192_Caption
+  ButtonRound192_Caption             = "Del"
+  ButtonRound192.OnDownPtr           = 0
+  ButtonRound192.OnClickPtr          = 0
+  ButtonRound192.OnPressPtr          = 8
+
+  ButtonRound193.OwnerScreenAddress  = @Screen1
+  ButtonRound193.Order               = 13
+  ButtonRound193.Left_               = 28
+  ButtonRound193.Top                 = 295
+  ButtonRound193.Width               = 75
+  ButtonRound193.Height              = 40
+  'ButtonRound193.Visible             = 1
+  ButtonRound193.Active              = 1
+  ButtonRound193.Caption             = @ButtonRound193_Caption
+  ButtonRound193_Caption             = "->|"
+  ButtonRound193.OnDownPtr           = 0
+  ButtonRound193.OnClickPtr          = 0
+  ButtonRound193.OnPressPtr          = 9
+
+  ButtonRound194.OwnerScreenAddress  = @Screen1
+  ButtonRound194.Order               = 14
+  ButtonRound194.Left_               = 113
+  ButtonRound194.Top                 = 295
+  ButtonRound194.Width               = 45
+  ButtonRound194.Height              = 40
+  'ButtonRound194.Visible             = 1
+  ButtonRound194.Active              = 1
+  ButtonRound194.Caption             = @ButtonRound194_Caption
+  ButtonRound194_Caption             = "q"
+  ButtonRound194.OnDownPtr           = 0
+  ButtonRound194.OnClickPtr          = 0
+  ButtonRound194.OnPressPtr          = 0
+
+  ButtonRound195.OwnerScreenAddress  = @Screen1
+  ButtonRound195.Order               = 15
+  ButtonRound195.Left_               = 168
+  ButtonRound195.Top                 = 295
+  ButtonRound195.Width               = 45
+  ButtonRound195.Height              = 40
+  'ButtonRound195.Visible             = 1
+  ButtonRound195.Active              = 1
+  ButtonRound195.Caption             = @ButtonRound195_Caption
+  ButtonRound195_Caption             = "w"
+  ButtonRound195.OnDownPtr           = 0
+  ButtonRound195.OnClickPtr          = 0
+  ButtonRound195.OnPressPtr          = 0
+
+  ButtonRound196.OwnerScreenAddress  = @Screen1
+  ButtonRound196.Order               = 16
+  ButtonRound196.Left_               = 223
+  ButtonRound196.Top                 = 295
+  ButtonRound196.Width               = 45
+  ButtonRound196.Height              = 40
+  'ButtonRound196.Visible             = 1
+  ButtonRound196.Active              = 1
+  ButtonRound196.Caption             = @ButtonRound196_Caption
+  ButtonRound196_Caption             = "e"
+  ButtonRound196.OnDownPtr           = 0
+  ButtonRound196.OnClickPtr          = 0
+  ButtonRound196.OnPressPtr          = 0
+
+  ButtonRound197.OwnerScreenAddress  = @Screen1
+  ButtonRound197.Order               = 17
+  ButtonRound197.Left_               = 278
+  ButtonRound197.Top                 = 295
+  ButtonRound197.Width               = 45
+  ButtonRound197.Height              = 40
+  'ButtonRound197.Visible             = 1
+  ButtonRound197.Active              = 1
+  ButtonRound197.Caption             = @ButtonRound197_Caption
+  ButtonRound197_Caption             = "r"
+  ButtonRound197.OnDownPtr           = 0
+  ButtonRound197.OnClickPtr          = 0
+  ButtonRound197.OnPressPtr          = 0
+
+  ButtonRound198.OwnerScreenAddress  = @Screen1
+  ButtonRound198.Order               = 18
+  ButtonRound198.Left_               = 333
+  ButtonRound198.Top                 = 295
+  ButtonRound198.Width               = 45
+  ButtonRound198.Height              = 40
+  'ButtonRound198.Visible             = 1
+  ButtonRound198.Active              = 1
+  ButtonRound198.Caption             = @ButtonRound198_Caption
+  ButtonRound198_Caption             = "t"
+  ButtonRound198.OnDownPtr           = 0
+  ButtonRound198.OnClickPtr          = 0
+  ButtonRound198.OnPressPtr          = 0
+
+  ButtonRound199.OwnerScreenAddress  = @Screen1
+  ButtonRound199.Order               = 19
+  ButtonRound199.Left_               = 388
+  ButtonRound199.Top                 = 295
+  ButtonRound199.Width               = 45
+  ButtonRound199.Height              = 40
+  'ButtonRound199.Visible             = 1
+  ButtonRound199.Active              = 1
+  ButtonRound199.Caption             = @ButtonRound199_Caption
+  ButtonRound199_Caption             = "z"
+  ButtonRound199.OnDownPtr           = 0
+  ButtonRound199.OnClickPtr          = 0
+  ButtonRound199.OnPressPtr          = 0
+
+  ButtonRound200.OwnerScreenAddress  = @Screen1
+  ButtonRound200.Order               = 20
+  ButtonRound200.Left_               = 443
+  ButtonRound200.Top                 = 295
+  ButtonRound200.Width               = 45
+  ButtonRound200.Height              = 40
+  'ButtonRound200.Visible             = 1
+  ButtonRound200.Active              = 1
+  ButtonRound200.Caption             = @ButtonRound200_Caption
+  ButtonRound200_Caption             = "u"
+  ButtonRound200.OnDownPtr           = 0
+  ButtonRound200.OnClickPtr          = 0
+  ButtonRound200.OnPressPtr          = 0
+
+  ButtonRound201.OwnerScreenAddress  = @Screen1
+  ButtonRound201.Order               = 21
+  ButtonRound201.Left_               = 498
+  ButtonRound201.Top                 = 295
+  ButtonRound201.Width               = 45
+  ButtonRound201.Height              = 40
+  'ButtonRound201.Visible             = 1
+  ButtonRound201.Active              = 1
+  ButtonRound201.Caption             = @ButtonRound201_Caption
+  ButtonRound201_Caption             = "i"
+  ButtonRound201.OnDownPtr           = 0
+  ButtonRound201.OnClickPtr          = 0
+  ButtonRound201.OnPressPtr          = 0
+
+  ButtonRound202.OwnerScreenAddress  = @Screen1
+  ButtonRound202.Order               = 22
+  ButtonRound202.Left_               = 553
+  ButtonRound202.Top                 = 295
+  ButtonRound202.Width               = 45
+  ButtonRound202.Height              = 40
+  'ButtonRound202.Visible             = 1
+  ButtonRound202.Active              = 1
+  ButtonRound202.Caption             = @ButtonRound202_Caption
+  ButtonRound202_Caption             = "o"
+  ButtonRound202.OnDownPtr           = 0
+  ButtonRound202.OnClickPtr          = 0
+  ButtonRound202.OnPressPtr          = 0
+
+  ButtonRound203.OwnerScreenAddress  = @Screen1
+  ButtonRound203.Order               = 23
+  ButtonRound203.Left_               = 608
+  ButtonRound203.Top                 = 295
+  ButtonRound203.Width               = 45
+  ButtonRound203.Height              = 40
+  'ButtonRound203.Visible             = 1
+  ButtonRound203.Active              = 1
+  ButtonRound203.Caption             = @ButtonRound203_Caption
+  ButtonRound203_Caption             = "p"
+  ButtonRound203.OnDownPtr           = 0
+  ButtonRound203.OnClickPtr          = 0
+  ButtonRound203.OnPressPtr          = 0
+
+  ButtonRound204.OwnerScreenAddress  = @Screen1
+  ButtonRound204.Order               = 24
+  ButtonRound204.Left_               = 663
+  ButtonRound204.Top                 = 295
+  ButtonRound204.Width               = 45
+  ButtonRound204.Height              = 40
+  'ButtonRound204.Visible             = 1
+  ButtonRound204.Active              = 1
+  ButtonRound204.Caption             = @ButtonRound204_Caption
+  ButtonRound204_Caption             = "ü"
+  ButtonRound204.OnDownPtr           = 0
+  ButtonRound204.OnClickPtr          = 0
+  ButtonRound204.OnPressPtr          = 0
+
+  ButtonRound205.OwnerScreenAddress  = @Screen1
+  ButtonRound205.Order               = 25
+  ButtonRound205.Left_               = 718
+  ButtonRound205.Top                 = 295
+  ButtonRound205.Width               = 45
+  ButtonRound205.Height              = 40
+  'ButtonRound205.Visible             = 1
+  ButtonRound205.Active              = 1
+  ButtonRound205.Caption             = @ButtonRound205_Caption
+  ButtonRound205_Caption             = "+"
+  ButtonRound205.OnDownPtr           = 0
+  ButtonRound205.OnClickPtr          = 0
+  ButtonRound205.OnPressPtr          = 0
+
+  ButtonRound206.OwnerScreenAddress  = @Screen1
+  ButtonRound206.Order               = 26
+  ButtonRound206.Left_               = 28
+  ButtonRound206.Top                 = 340
+  ButtonRound206.Width               = 45
+  ButtonRound206.Height              = 40
+  'ButtonRound206.Visible             = 1
+  ButtonRound206.Active              = 1
+  ButtonRound206.Caption             = @ButtonRound206_Caption
+  ButtonRound206_Caption             = "Pos1"
+  ButtonRound206.OnDownPtr           = 0
+  ButtonRound206.OnClickPtr          = 0
+  ButtonRound206.OnPressPtr          = 49
+
+  ButtonRound207.OwnerScreenAddress  = @Screen1
+  ButtonRound207.Order               = 27
+  ButtonRound207.Left_               = 83
+  ButtonRound207.Top                 = 340
+  ButtonRound207.Width               = 45
+  ButtonRound207.Height              = 40
+  'ButtonRound207.Visible             = 1
+  ButtonRound207.Active              = 1
+  ButtonRound207.Caption             = @ButtonRound207_Caption
+  ButtonRound207_Caption             = "Ende"
+  ButtonRound207.OnDownPtr           = 0
+  ButtonRound207.OnClickPtr          = 0
+  ButtonRound207.OnPressPtr          = 52
+
+  ButtonRound208.OwnerScreenAddress  = @Screen1
+  ButtonRound208.Order               = 28
+  ButtonRound208.Left_               = 138
+  ButtonRound208.Top                 = 340
+  ButtonRound208.Width               = 45
+  ButtonRound208.Height              = 40
+  'ButtonRound208.Visible             = 1
+  ButtonRound208.Active              = 1
+  ButtonRound208.Caption             = @ButtonRound208_Caption
+  ButtonRound208_Caption             = "a"
+  ButtonRound208.OnDownPtr           = 0
+  ButtonRound208.OnClickPtr          = 0
+  ButtonRound208.OnPressPtr          = 0
+
+  ButtonRound209.OwnerScreenAddress  = @Screen1
+  ButtonRound209.Order               = 29
+  ButtonRound209.Left_               = 193
+  ButtonRound209.Top                 = 340
+  ButtonRound209.Width               = 45
+  ButtonRound209.Height              = 40
+  'ButtonRound209.Visible             = 1
+  ButtonRound209.Active              = 1
+  ButtonRound209.Caption             = @ButtonRound209_Caption
+  ButtonRound209_Caption             = "s"
+  ButtonRound209.OnDownPtr           = 0
+  ButtonRound209.OnClickPtr          = 0
+  ButtonRound209.OnPressPtr          = 0
+
+  ButtonRound210.OwnerScreenAddress  = @Screen1
+  ButtonRound210.Order               = 30
+  ButtonRound210.Left_               = 248
+  ButtonRound210.Top                 = 340
+  ButtonRound210.Width               = 45
+  ButtonRound210.Height              = 40
+  'ButtonRound210.Visible             = 1
+  ButtonRound210.Active              = 1
+  ButtonRound210.Caption             = @ButtonRound210_Caption
+  ButtonRound210_Caption             = "d"
+  ButtonRound210.OnDownPtr           = 0
+  ButtonRound210.OnClickPtr          = 0
+  ButtonRound210.OnPressPtr          = 0
+
+  ButtonRound211.OwnerScreenAddress  = @Screen1
+  ButtonRound211.Order               = 31
+  ButtonRound211.Left_               = 303
+  ButtonRound211.Top                 = 340
+  ButtonRound211.Width               = 45
+  ButtonRound211.Height              = 40
+  'ButtonRound211.Visible             = 1
+  ButtonRound211.Active              = 1
+  ButtonRound211.Caption             = @ButtonRound211_Caption
+  ButtonRound211_Caption             = "f"
+  ButtonRound211.OnDownPtr           = 0
+  ButtonRound211.OnClickPtr          = 0
+  ButtonRound211.OnPressPtr          = 0
+
+  ButtonRound212.OwnerScreenAddress  = @Screen1
+  ButtonRound212.Order               = 32
+  ButtonRound212.Left_               = 358
+  ButtonRound212.Top                 = 340
+  ButtonRound212.Width               = 45
+  ButtonRound212.Height              = 40
+  'ButtonRound212.Visible             = 1
+  ButtonRound212.Active              = 1
+  ButtonRound212.Caption             = @ButtonRound212_Caption
+  ButtonRound212_Caption             = "g"
+  ButtonRound212.OnDownPtr           = 0
+  ButtonRound212.OnClickPtr          = 0
+  ButtonRound212.OnPressPtr          = 0
+
+  ButtonRound213.OwnerScreenAddress  = @Screen1
+  ButtonRound213.Order               = 33
+  ButtonRound213.Left_               = 413
+  ButtonRound213.Top                 = 340
+  ButtonRound213.Width               = 45
+  ButtonRound213.Height              = 40
+  'ButtonRound213.Visible             = 1
+  ButtonRound213.Active              = 1
+  ButtonRound213.Caption             = @ButtonRound213_Caption
+  ButtonRound213_Caption             = "h"
+  ButtonRound213.OnDownPtr           = 0
+  ButtonRound213.OnClickPtr          = 0
+  ButtonRound213.OnPressPtr          = 0
+
+  ButtonRound214.OwnerScreenAddress  = @Screen1
+  ButtonRound214.Order               = 34
+  ButtonRound214.Left_               = 468
+  ButtonRound214.Top                 = 340
+  ButtonRound214.Width               = 45
+  ButtonRound214.Height              = 40
+  'ButtonRound214.Visible             = 1
+  ButtonRound214.Active              = 1
+  ButtonRound214.Caption             = @ButtonRound214_Caption
+  ButtonRound214_Caption             = "j"
+  ButtonRound214.OnDownPtr           = 0
+  ButtonRound214.OnClickPtr          = 0
+  ButtonRound214.OnPressPtr          = 0
+
+  ButtonRound215.OwnerScreenAddress  = @Screen1
+  ButtonRound215.Order               = 35
+  ButtonRound215.Left_               = 523
+  ButtonRound215.Top                 = 340
+  ButtonRound215.Width               = 45
+  ButtonRound215.Height              = 40
+  'ButtonRound215.Visible             = 1
+  ButtonRound215.Active              = 1
+  ButtonRound215.Caption             = @ButtonRound215_Caption
+  ButtonRound215_Caption             = "k"
+  ButtonRound215.OnDownPtr           = 0
+  ButtonRound215.OnClickPtr          = 0
+  ButtonRound215.OnPressPtr          = 0
+
+  ButtonRound216.OwnerScreenAddress  = @Screen1
+  ButtonRound216.Order               = 36
+  ButtonRound216.Left_               = 578
+  ButtonRound216.Top                 = 340
+  ButtonRound216.Width               = 45
+  ButtonRound216.Height              = 40
+  'ButtonRound216.Visible             = 1
+  ButtonRound216.Active              = 1
+  ButtonRound216.Caption             = @ButtonRound216_Caption
+  ButtonRound216_Caption             = "l"
+  ButtonRound216.OnDownPtr           = 0
+  ButtonRound216.OnClickPtr          = 0
+  ButtonRound216.OnPressPtr          = 0
+
+  ButtonRound217.OwnerScreenAddress  = @Screen1
+  ButtonRound217.Order               = 37
+  ButtonRound217.Left_               = 633
+  ButtonRound217.Top                 = 340
+  ButtonRound217.Width               = 45
+  ButtonRound217.Height              = 40
+  'ButtonRound217.Visible             = 1
+  ButtonRound217.Active              = 1
+  ButtonRound217.Caption             = @ButtonRound217_Caption
+  ButtonRound217_Caption             = "ö"
+  ButtonRound217.OnDownPtr           = 0
+  ButtonRound217.OnClickPtr          = 0
+  ButtonRound217.OnPressPtr          = 0
+
+  ButtonRound218.OwnerScreenAddress  = @Screen1
+  ButtonRound218.Order               = 38
+  ButtonRound218.Left_               = 688
+  ButtonRound218.Top                 = 340
+  ButtonRound218.Width               = 75
+  ButtonRound218.Height              = 40
+  'ButtonRound218.Visible             = 1
+  ButtonRound218.Active              = 1
+  ButtonRound218.Caption             = @ButtonRound218_Caption
+  ButtonRound218_Caption             = "Enter"
+  ButtonRound218.OnDownPtr           = 0
+  ButtonRound218.OnClickPtr          = 0
+  ButtonRound218.OnPressPtr          = 13
+
+  ButtonRound219.OwnerScreenAddress  = @Screen1
+  ButtonRound219.Order               = 39
+  ButtonRound219.Left_               = 28
+  ButtonRound219.Top                 = 385
+  ButtonRound219.Width               = 75
+  ButtonRound219.Height              = 40
+  'ButtonRound219.Visible             = 1
+  ButtonRound219.Active              = 1
+  ButtonRound219.Caption             = @ButtonRound219_Caption
+  ButtonRound219_Caption             = "Shift"
+  ButtonRound219.OnDownPtr           = 0
+  ButtonRound219.OnClickPtr          = @execute_shift
+  ButtonRound219.OnPressPtr          = 0
+
+  ButtonRound220.OwnerScreenAddress  = @Screen1
+  ButtonRound220.Order               = 40
+  ButtonRound220.Left_               = 113
+  ButtonRound220.Top                 = 385
+  ButtonRound220.Width               = 45
+  ButtonRound220.Height              = 40
+  'ButtonRound220.Visible             = 1
+  ButtonRound220.Active              = 1
+  ButtonRound220.Caption             = @ButtonRound220_Caption
+  ButtonRound220_Caption             = "<"
+  ButtonRound220.OnDownPtr           = 0
+  ButtonRound220.OnClickPtr          = 0
+  ButtonRound220.OnPressPtr          = 0
+
+  ButtonRound221.OwnerScreenAddress  = @Screen1
+  ButtonRound221.Order               = 41
+  ButtonRound221.Left_               = 168
+  ButtonRound221.Top                 = 385
+  ButtonRound221.Width               = 45
+  ButtonRound221.Height              = 40
+  'ButtonRound221.Visible             = 1
+  ButtonRound221.Active              = 1
+  ButtonRound221.Caption             = @ButtonRound221_Caption
+  ButtonRound221_Caption             = "y"
+  ButtonRound221.OnDownPtr           = 0
+  ButtonRound221.OnClickPtr          = 0
+  ButtonRound221.OnPressPtr          = 0
+
+  ButtonRound222.OwnerScreenAddress  = @Screen1
+  ButtonRound222.Order               = 42
+  ButtonRound222.Left_               = 223
+  ButtonRound222.Top                 = 385
+  ButtonRound222.Width               = 45
+  ButtonRound222.Height              = 40
+  'ButtonRound222.Visible             = 1
+  ButtonRound222.Active              = 1
+  ButtonRound222.Caption             = @ButtonRound222_Caption
+  ButtonRound222_Caption             = "x"
+  ButtonRound222.OnDownPtr           = 0
+  ButtonRound222.OnClickPtr          = 0
+  ButtonRound222.OnPressPtr          = 0
+
+  ButtonRound223.OwnerScreenAddress  = @Screen1
+  ButtonRound223.Order               = 43
+  ButtonRound223.Left_               = 278
+  ButtonRound223.Top                 = 385
+  ButtonRound223.Width               = 45
+  ButtonRound223.Height              = 40
+  'ButtonRound223.Visible             = 1
+  ButtonRound223.Active              = 1
+  ButtonRound223.Caption             = @ButtonRound223_Caption
+  ButtonRound223_Caption             = "c"
+  ButtonRound223.OnDownPtr           = 0
+  ButtonRound223.OnClickPtr          = 0
+  ButtonRound223.OnPressPtr          = 0
+
+  ButtonRound224.OwnerScreenAddress  = @Screen1
+  ButtonRound224.Order               = 44
+  ButtonRound224.Left_               = 333
+  ButtonRound224.Top                 = 385
+  ButtonRound224.Width               = 45
+  ButtonRound224.Height              = 40
+  'ButtonRound224.Visible             = 1
+  ButtonRound224.Active              = 1
+  ButtonRound224.Caption             = @ButtonRound224_Caption
+  ButtonRound224_Caption             = "v"
+  ButtonRound224.OnDownPtr           = 0
+  ButtonRound224.OnClickPtr          = 0
+  ButtonRound224.OnPressPtr          = 0
+
+  ButtonRound225.OwnerScreenAddress  = @Screen1
+  ButtonRound225.Order               = 45
+  ButtonRound225.Left_               = 388
+  ButtonRound225.Top                 = 385
+  ButtonRound225.Width               = 45
+  ButtonRound225.Height              = 40
+  'ButtonRound225.Visible             = 1
+  ButtonRound225.Active              = 1
+  ButtonRound225.Caption             = @ButtonRound225_Caption
+  ButtonRound225_Caption             = "b"
+  ButtonRound225.OnDownPtr           = 0
+  ButtonRound225.OnClickPtr          = 0
+  ButtonRound225.OnPressPtr          = 0
+
+  ButtonRound226.OwnerScreenAddress  = @Screen1
+  ButtonRound226.Order               = 46
+  ButtonRound226.Left_               = 443
+  ButtonRound226.Top                 = 385
+  ButtonRound226.Width               = 45
+  ButtonRound226.Height              = 40
+  'ButtonRound226.Visible             = 1
+  ButtonRound226.Active              = 1
+  ButtonRound226.Caption             = @ButtonRound226_Caption
+  ButtonRound226_Caption             = "n"
+  ButtonRound226.OnDownPtr           = 0
+  ButtonRound226.OnClickPtr          = 0
+  ButtonRound226.OnPressPtr          = 0
+
+  ButtonRound227.OwnerScreenAddress  = @Screen1
+  ButtonRound227.Order               = 47
+  ButtonRound227.Left_               = 498
+  ButtonRound227.Top                 = 385
+  ButtonRound227.Width               = 45
+  ButtonRound227.Height              = 40
+  'ButtonRound227.Visible             = 1
+  ButtonRound227.Active              = 1
+  ButtonRound227.Caption             = @ButtonRound227_Caption
+  ButtonRound227_Caption             = "m"
+  ButtonRound227.OnDownPtr           = 0
+  ButtonRound227.OnClickPtr          = 0
+  ButtonRound227.OnPressPtr          = 0
+
+  ButtonRound228.OwnerScreenAddress  = @Screen1
+  ButtonRound228.Order               = 48
+  ButtonRound228.Left_               = 553
+  ButtonRound228.Top                 = 385
+  ButtonRound228.Width               = 45
+  ButtonRound228.Height              = 40
+  'ButtonRound228.Visible             = 1
+  ButtonRound228.Active              = 1
+  ButtonRound228.Caption             = @ButtonRound228_Caption
+  ButtonRound228_Caption             = ","
+  ButtonRound228.OnDownPtr           = 0
+  ButtonRound228.OnClickPtr          = 0
+  ButtonRound228.OnPressPtr          = 0
+
+  ButtonRound229.OwnerScreenAddress  = @Screen1
+  ButtonRound229.Order               = 49
+  ButtonRound229.Left_               = 608
+  ButtonRound229.Top                 = 385
+  ButtonRound229.Width               = 45
+  ButtonRound229.Height              = 40
+  'ButtonRound229.Visible             = 1
+  ButtonRound229.Active              = 1
+  ButtonRound229.Caption             = @ButtonRound229_Caption
+  ButtonRound229_Caption             = "."
+  ButtonRound229.OnDownPtr           = 0
+  ButtonRound229.OnClickPtr          = 0
+  ButtonRound229.OnPressPtr          = 0
+
+  ButtonRound230.OwnerScreenAddress  = @Screen1
+  ButtonRound230.Order               = 50
+  ButtonRound230.Left_               = 663
+  ButtonRound230.Top                 = 385
+  ButtonRound230.Width               = 45
+  ButtonRound230.Height              = 40
+  'ButtonRound230.Visible             = 1
+  ButtonRound230.Active              = 1
+  ButtonRound230.Caption             = @ButtonRound230_Caption
+  ButtonRound230_Caption             = "-"
+  ButtonRound230.OnDownPtr           = 0
+  ButtonRound230.OnClickPtr          = 0
+  ButtonRound230.OnPressPtr          = 0
+
+  ButtonRound231.OwnerScreenAddress  = @Screen1
+  ButtonRound231.Order               = 51
+  ButtonRound231.Left_               = 718
+  ButtonRound231.Top                 = 385
+  ButtonRound231.Width               = 45
+  ButtonRound231.Height              = 40
+  'ButtonRound231.Visible             = 1
+  ButtonRound231.Active              = 1
+  ButtonRound231.Caption             = @ButtonRound231_Caption
+  ButtonRound231_Caption             = "ä"
+  ButtonRound231.OnDownPtr           = 0
+  ButtonRound231.OnClickPtr          = 0
+  ButtonRound231.OnPressPtr          = 0
+
+  ButtonRound232.OwnerScreenAddress  = @Screen1
+  ButtonRound232.Order               = 52
+  ButtonRound232.Left_               = 28
+  ButtonRound232.Top                 = 430
+  ButtonRound232.Width               = 45
+  ButtonRound232.Height              = 40
+  'ButtonRound232.Visible             = 1
+  ButtonRound232.Active              = 1
+  ButtonRound232.Caption             = @ButtonRound232_Caption
+  ButtonRound232_Caption             = "fn"
+  ButtonRound232.OnDownPtr           = 0
+  ButtonRound232.OnClickPtr          = @execute_fn
+  ButtonRound232.OnPressPtr          = 0
+
+  ButtonRound233.OwnerScreenAddress  = @Screen1
+  ButtonRound233.Order               = 53
+  ButtonRound233.Left_               = 83
+  ButtonRound233.Top                 = 430
+  ButtonRound233.Width               = 45
+  ButtonRound233.Height              = 40
+  'ButtonRound233.Visible             = 1
+  ButtonRound233.Active              = 1
+  ButtonRound233.Caption             = @ButtonRound233_Caption
+  ButtonRound233_Caption             = "Strg"
+  ButtonRound233.OnDownPtr           = 0
+  ButtonRound233.OnClickPtr          = @execute_ctrl
+  ButtonRound233.OnPressPtr          = 0
+
+  ButtonRound234.OwnerScreenAddress  = @Screen1
+  ButtonRound234.Order               = 54
+  ButtonRound234.Left_               = 138
+  ButtonRound234.Top                 = 430
+  ButtonRound234.Width               = 45
+  ButtonRound234.Height              = 40
+  'ButtonRound234.Visible             = 1
+  ButtonRound234.Active              = 0
+  ButtonRound234.Caption             = @ButtonRound234_Caption
+  ButtonRound234_Caption             = "Win"
+  ButtonRound234.OnDownPtr           = 0
+  ButtonRound234.OnClickPtr          = 0
+  ButtonRound234.OnPressPtr          = 0
+
+  ButtonRound235.OwnerScreenAddress  = @Screen1
+  ButtonRound235.Order               = 55
+  ButtonRound235.Left_               = 193
+  ButtonRound235.Top                 = 430
+  ButtonRound235.Width               = 45
+  ButtonRound235.Height              = 40
+  'ButtonRound235.Visible             = 1
+  ButtonRound235.Active              = 0
+  ButtonRound235.Caption             = @ButtonRound235_Caption
+  ButtonRound235_Caption             = "Alt"
+  ButtonRound235.OnDownPtr           = 0
+  ButtonRound235.OnClickPtr          = 0
+  ButtonRound235.OnPressPtr          = 0
+
+  ButtonRound236.OwnerScreenAddress  = @Screen1
+  ButtonRound236.Order               = 56
+  ButtonRound236.Left_               = 248
+  ButtonRound236.Top                 = 430
+  ButtonRound236.Width               = 210
+  ButtonRound236.Height              = 40
+  'ButtonRound236.Visible             = 1
+  ButtonRound236.Active              = 1
+  ButtonRound236.Caption             = @ButtonRound236_Caption
+  ButtonRound236_Caption             = " "
+  ButtonRound236.OnDownPtr           = 0
+  ButtonRound236.OnClickPtr          = 0
+  ButtonRound236.OnPressPtr          = 0
+
+  ButtonRound240.OwnerScreenAddress  = @Screen1
+  ButtonRound240.Order               = 57
+  ButtonRound240.Left_               = 468
+  ButtonRound240.Top                 = 430
+  ButtonRound240.Width               = 45
+  ButtonRound240.Height              = 40
+  'ButtonRound240.Visible             = 1
+  ButtonRound240.Active              = 1
+  ButtonRound240.Caption             = @ButtonRound240_Caption
+  ButtonRound240_Caption             = "AltGr"
+  ButtonRound240.OnDownPtr           = 0
+  ButtonRound240.OnClickPtr          = @execute_AltGr
+  ButtonRound240.OnPressPtr          = 0
+
+  ButtonRound241.OwnerScreenAddress  = @Screen1
+  ButtonRound241.Order               = 58
+  ButtonRound241.Left_               = 523
+  ButtonRound241.Top                 = 430
+  ButtonRound241.Width               = 45
+  ButtonRound241.Height              = 40
+  'ButtonRound241.Visible             = 1
+  ButtonRound241.Active              = 1
+  ButtonRound241.Caption             = @ButtonRound241_Caption
+  ButtonRound241_Caption             = "´"
+  ButtonRound241.OnDownPtr           = 0
+  ButtonRound241.OnClickPtr          = 0
+  ButtonRound241.OnPressPtr          = 0
+
+  ButtonRound242.OwnerScreenAddress  = @Screen1
+  ButtonRound242.Order               = 59
+  ButtonRound242.Left_               = 578
+  ButtonRound242.Top                 = 430
+  ButtonRound242.Width               = 45
+  ButtonRound242.Height              = 40
+  'ButtonRound242.Visible             = 1
+  ButtonRound242.Active              = 1
+  ButtonRound242.Caption             = @ButtonRound242_Caption
+  ButtonRound242_Caption             = "#"
+  ButtonRound242.OnDownPtr           = 0
+  ButtonRound242.OnClickPtr          = 0
+  ButtonRound242.OnPressPtr          = 0
+
+  ButtonRound2.OwnerScreenAddress  = @Screen1
+  ButtonRound2.Order               = 60
+  ButtonRound2.Left_               = 738
+  ButtonRound2.Top                 = 430
+  ButtonRound2.Width               = 25
+  ButtonRound2.Height              = 40
+  'ButtonRound2.Visible             = 1
+  ButtonRound2.Active              = 1
+  ButtonRound2.Caption             = @ButtonRound2_Caption
+  ButtonRound2_Caption             = "dn"
+  ButtonRound2.OnDownPtr           = 0
+  ButtonRound2.OnClickPtr          = 0
+  ButtonRound2.OnPressPtr          = 66
+
+  ButtonRound3.OwnerScreenAddress  = @Screen1
+  ButtonRound3.Order               = 61
+  ButtonRound3.Left_               = 703
+  ButtonRound3.Top                 = 430
+  ButtonRound3.Width               = 25
+  ButtonRound3.Height              = 40
+  'ButtonRound3.Visible             = 1
+  ButtonRound3.Active              = 1
+  ButtonRound3.Caption             = @ButtonRound3_Caption
+  ButtonRound3_Caption             = "up"
+  ButtonRound3.OnDownPtr           = 0
+  ButtonRound3.OnClickPtr          = 0
+  ButtonRound3.OnPressPtr          = 65
+
+  ButtonRound4.OwnerScreenAddress  = @Screen1
+  ButtonRound4.Order               = 62
+  ButtonRound4.Left_               = 668
+  ButtonRound4.Top                 = 430
+  ButtonRound4.Width               = 25
+  ButtonRound4.Height              = 40
+  'ButtonRound4.Visible             = 1
+  ButtonRound4.Active              = 1
+  ButtonRound4.Caption             = @ButtonRound4_Caption
+  ButtonRound4_Caption             = ">"
+  ButtonRound4.OnDownPtr           = 0
+  ButtonRound4.OnClickPtr          = 0
+  ButtonRound4.OnPressPtr          = 67
+
+  ButtonRound5.OwnerScreenAddress  = @Screen1
+  ButtonRound5.Order               = 63
+  ButtonRound5.Left_               = 633
+  ButtonRound5.Top                 = 430
+  ButtonRound5.Width               = 25
+  ButtonRound5.Height              = 40
+  'ButtonRound5.Visible             = 1
+  ButtonRound5.Active              = 1
+  ButtonRound5.Caption             = @ButtonRound5_Caption
+  ButtonRound5_Caption             = "<"
+  ButtonRound5.OnDownPtr           = 0
+  ButtonRound5.OnClickPtr          = 0
+  ButtonRound5.OnPressPtr          = 68
+
+  ButtonRound6.OwnerScreenAddress  = @Screen2
+  ButtonRound6.Order               = 0
+  ButtonRound6.Left_               = 28
+  ButtonRound6.Top                 = 250
+  ButtonRound6.Width               = 45
+  ButtonRound6.Height              = 40
+  'ButtonRound6.Visible             = 1
+  ButtonRound6.Active              = 1
+  ButtonRound6.Caption             = @ButtonRound6_Caption
+  ButtonRound6_Caption             = "°"
+  ButtonRound6.OnDownPtr           = 0
+  ButtonRound6.OnClickPtr          = 0
+  ButtonRound6.OnPressPtr          = 0
+
+  ButtonRound7.OwnerScreenAddress  = @Screen2
+  ButtonRound7.Order               = 1
+  ButtonRound7.Left_               = 83
+  ButtonRound7.Top                 = 250
+  ButtonRound7.Width               = 45
+  ButtonRound7.Height              = 40
+  'ButtonRound7.Visible             = 1
+  ButtonRound7.Active              = 1
+  ButtonRound7.Caption             = @ButtonRound7_Caption
+  ButtonRound7_Caption             = "!"
+  ButtonRound7.OnDownPtr           = 0
+  ButtonRound7.OnClickPtr          = 0
+  ButtonRound7.OnPressPtr          = 0
+
+  ButtonRound8.OwnerScreenAddress  = @Screen2
+  ButtonRound8.Order               = 2
+  ButtonRound8.Left_               = 138
+  ButtonRound8.Top                 = 250
+  ButtonRound8.Width               = 45
+  ButtonRound8.Height              = 40
+  'ButtonRound8.Visible             = 1
+  ButtonRound8.Active              = 1
+  ButtonRound8.Caption             = @ButtonRound8_Caption
+  ButtonRound8_Caption             = Chr(34) + ""
+  ButtonRound8.OnDownPtr           = 0
+  ButtonRound8.OnClickPtr          = 0
+  ButtonRound8.OnPressPtr          = 0
+
+  ButtonRound9.OwnerScreenAddress  = @Screen2
+  ButtonRound9.Order               = 3
+  ButtonRound9.Left_               = 193
+  ButtonRound9.Top                 = 250
+  ButtonRound9.Width               = 45
+  ButtonRound9.Height              = 40
+  'ButtonRound9.Visible             = 1
+  ButtonRound9.Active              = 1
+  ButtonRound9.Caption             = @ButtonRound9_Caption
+  ButtonRound9_Caption             = "§"
+  ButtonRound9.OnDownPtr           = 0
+  ButtonRound9.OnClickPtr          = 0
+  ButtonRound9.OnPressPtr          = 0
+
+  ButtonRound10.OwnerScreenAddress  = @Screen2
+  ButtonRound10.Order               = 4
+  ButtonRound10.Left_               = 248
+  ButtonRound10.Top                 = 250
+  ButtonRound10.Width               = 45
+  ButtonRound10.Height              = 40
+  'ButtonRound10.Visible             = 1
+  ButtonRound10.Active              = 1
+  ButtonRound10.Caption             = @ButtonRound10_Caption
+  ButtonRound10_Caption             = "$"
+  ButtonRound10.OnDownPtr           = 0
+  ButtonRound10.OnClickPtr          = 0
+  ButtonRound10.OnPressPtr          = 0
+
+  ButtonRound11.OwnerScreenAddress  = @Screen2
+  ButtonRound11.Order               = 5
+  ButtonRound11.Left_               = 303
+  ButtonRound11.Top                 = 250
+  ButtonRound11.Width               = 45
+  ButtonRound11.Height              = 40
+  'ButtonRound11.Visible             = 1
+  ButtonRound11.Active              = 1
+  ButtonRound11.Caption             = @ButtonRound11_Caption
+  ButtonRound11_Caption             = "%"
+  ButtonRound11.OnDownPtr           = 0
+  ButtonRound11.OnClickPtr          = 0
+  ButtonRound11.OnPressPtr          = 0
+
+  ButtonRound12.OwnerScreenAddress  = @Screen2
+  ButtonRound12.Order               = 6
+  ButtonRound12.Left_               = 358
+  ButtonRound12.Top                 = 250
+  ButtonRound12.Width               = 45
+  ButtonRound12.Height              = 40
+  'ButtonRound12.Visible             = 1
+  ButtonRound12.Active              = 1
+  ButtonRound12.Caption             = @ButtonRound12_Caption
+  ButtonRound12_Caption             = "&"
+  ButtonRound12.OnDownPtr           = 0
+  ButtonRound12.OnClickPtr          = 0
+  ButtonRound12.OnPressPtr          = 0
+
+  ButtonRound13.OwnerScreenAddress  = @Screen2
+  ButtonRound13.Order               = 7
+  ButtonRound13.Left_               = 413
+  ButtonRound13.Top                 = 250
+  ButtonRound13.Width               = 45
+  ButtonRound13.Height              = 40
+  'ButtonRound13.Visible             = 1
+  ButtonRound13.Active              = 1
+  ButtonRound13.Caption             = @ButtonRound13_Caption
+  ButtonRound13_Caption             = "/"
+  ButtonRound13.OnDownPtr           = 0
+  ButtonRound13.OnClickPtr          = 0
+  ButtonRound13.OnPressPtr          = 0
+
+  ButtonRound14.OwnerScreenAddress  = @Screen2
+  ButtonRound14.Order               = 8
+  ButtonRound14.Left_               = 468
+  ButtonRound14.Top                 = 250
+  ButtonRound14.Width               = 45
+  ButtonRound14.Height              = 40
+  'ButtonRound14.Visible             = 1
+  ButtonRound14.Active              = 1
+  ButtonRound14.Caption             = @ButtonRound14_Caption
+  ButtonRound14_Caption             = "("
+  ButtonRound14.OnDownPtr           = 0
+  ButtonRound14.OnClickPtr          = 0
+  ButtonRound14.OnPressPtr          = 0
+
+  ButtonRound15.OwnerScreenAddress  = @Screen2
+  ButtonRound15.Order               = 9
+  ButtonRound15.Left_               = 523
+  ButtonRound15.Top                 = 250
+  ButtonRound15.Width               = 45
+  ButtonRound15.Height              = 40
+  'ButtonRound15.Visible             = 1
+  ButtonRound15.Active              = 1
+  ButtonRound15.Caption             = @ButtonRound15_Caption
+  ButtonRound15_Caption             = ")"
+  ButtonRound15.OnDownPtr           = 0
+  ButtonRound15.OnClickPtr          = 0
+  ButtonRound15.OnPressPtr          = 0
+
+  ButtonRound16.OwnerScreenAddress  = @Screen2
+  ButtonRound16.Order               = 10
+  ButtonRound16.Left_               = 578
+  ButtonRound16.Top                 = 250
+  ButtonRound16.Width               = 45
+  ButtonRound16.Height              = 40
+  'ButtonRound16.Visible             = 1
+  ButtonRound16.Active              = 1
+  ButtonRound16.Caption             = @ButtonRound16_Caption
+  ButtonRound16_Caption             = "="
+  ButtonRound16.OnDownPtr           = 0
+  ButtonRound16.OnClickPtr          = 0
+  ButtonRound16.OnPressPtr          = 0
+
+  ButtonRound17.OwnerScreenAddress  = @Screen2
+  ButtonRound17.Order               = 11
+  ButtonRound17.Left_               = 633
+  ButtonRound17.Top                 = 250
+  ButtonRound17.Width               = 45
+  ButtonRound17.Height              = 40
+  'ButtonRound17.Visible             = 1
+  ButtonRound17.Active              = 1
+  ButtonRound17.Caption             = @ButtonRound17_Caption
+  ButtonRound17_Caption             = "?"
+  ButtonRound17.OnDownPtr           = 0
+  ButtonRound17.OnClickPtr          = 0
+  ButtonRound17.OnPressPtr          = 0
+
+  ButtonRound18.OwnerScreenAddress  = @Screen2
+  ButtonRound18.Order               = 12
+  ButtonRound18.Left_               = 688
+  ButtonRound18.Top                 = 250
+  ButtonRound18.Width               = 75
+  ButtonRound18.Height              = 40
+  'ButtonRound18.Visible             = 1
+  ButtonRound18.Active              = 1
+  ButtonRound18.Caption             = @ButtonRound18_Caption
+  ButtonRound18_Caption             = "Entf"
+  ButtonRound18.OnDownPtr           = 0
+  ButtonRound18.OnClickPtr          = 0
+  ButtonRound18.OnPressPtr          = 127
+
+  ButtonRound19.OwnerScreenAddress  = @Screen2
+  ButtonRound19.Order               = 13
+  ButtonRound19.Left_               = 28
+  ButtonRound19.Top                 = 295
+  ButtonRound19.Width               = 75
+  ButtonRound19.Height              = 40
+  'ButtonRound19.Visible             = 1
+  ButtonRound19.Active              = 0
+  ButtonRound19.Caption             = @ButtonRound19_Caption
+  ButtonRound19_Caption             = "|<-"
+  ButtonRound19.OnDownPtr           = 0
+  ButtonRound19.OnClickPtr          = 0
+  ButtonRound19.OnPressPtr          = 0
+
+  ButtonRound20.OwnerScreenAddress  = @Screen2
+  ButtonRound20.Order               = 14
+  ButtonRound20.Left_               = 113
+  ButtonRound20.Top                 = 295
+  ButtonRound20.Width               = 45
+  ButtonRound20.Height              = 40
+  'ButtonRound20.Visible             = 1
+  ButtonRound20.Active              = 1
+  ButtonRound20.Caption             = @ButtonRound20_Caption
+  ButtonRound20_Caption             = "Q"
+  ButtonRound20.OnDownPtr           = 0
+  ButtonRound20.OnClickPtr          = 0
+  ButtonRound20.OnPressPtr          = 0
+
+  ButtonRound21.OwnerScreenAddress  = @Screen2
+  ButtonRound21.Order               = 15
+  ButtonRound21.Left_               = 168
+  ButtonRound21.Top                 = 295
+  ButtonRound21.Width               = 45
+  ButtonRound21.Height              = 40
+  'ButtonRound21.Visible             = 1
+  ButtonRound21.Active              = 1
+  ButtonRound21.Caption             = @ButtonRound21_Caption
+  ButtonRound21_Caption             = "W"
+  ButtonRound21.OnDownPtr           = 0
+  ButtonRound21.OnClickPtr          = 0
+  ButtonRound21.OnPressPtr          = 0
+
+  ButtonRound22.OwnerScreenAddress  = @Screen2
+  ButtonRound22.Order               = 16
+  ButtonRound22.Left_               = 223
+  ButtonRound22.Top                 = 295
+  ButtonRound22.Width               = 45
+  ButtonRound22.Height              = 40
+  'ButtonRound22.Visible             = 1
+  ButtonRound22.Active              = 1
+  ButtonRound22.Caption             = @ButtonRound22_Caption
+  ButtonRound22_Caption             = "E"
+  ButtonRound22.OnDownPtr           = 0
+  ButtonRound22.OnClickPtr          = 0
+  ButtonRound22.OnPressPtr          = 0
+
+  ButtonRound23.OwnerScreenAddress  = @Screen2
+  ButtonRound23.Order               = 17
+  ButtonRound23.Left_               = 278
+  ButtonRound23.Top                 = 295
+  ButtonRound23.Width               = 45
+  ButtonRound23.Height              = 40
+  'ButtonRound23.Visible             = 1
+  ButtonRound23.Active              = 1
+  ButtonRound23.Caption             = @ButtonRound23_Caption
+  ButtonRound23_Caption             = "R"
+  ButtonRound23.OnDownPtr           = 0
+  ButtonRound23.OnClickPtr          = 0
+  ButtonRound23.OnPressPtr          = 0
+
+  ButtonRound24.OwnerScreenAddress  = @Screen2
+  ButtonRound24.Order               = 18
+  ButtonRound24.Left_               = 333
+  ButtonRound24.Top                 = 295
+  ButtonRound24.Width               = 45
+  ButtonRound24.Height              = 40
+  'ButtonRound24.Visible             = 1
+  ButtonRound24.Active              = 1
+  ButtonRound24.Caption             = @ButtonRound24_Caption
+  ButtonRound24_Caption             = "T"
+  ButtonRound24.OnDownPtr           = 0
+  ButtonRound24.OnClickPtr          = 0
+  ButtonRound24.OnPressPtr          = 0
+
+  ButtonRound25.OwnerScreenAddress  = @Screen2
+  ButtonRound25.Order               = 19
+  ButtonRound25.Left_               = 388
+  ButtonRound25.Top                 = 295
+  ButtonRound25.Width               = 45
+  ButtonRound25.Height              = 40
+  'ButtonRound25.Visible             = 1
+  ButtonRound25.Active              = 1
+  ButtonRound25.Caption             = @ButtonRound25_Caption
+  ButtonRound25_Caption             = "Z"
+  ButtonRound25.OnDownPtr           = 0
+  ButtonRound25.OnClickPtr          = 0
+  ButtonRound25.OnPressPtr          = 0
+
+  ButtonRound26.OwnerScreenAddress  = @Screen2
+  ButtonRound26.Order               = 20
+  ButtonRound26.Left_               = 443
+  ButtonRound26.Top                 = 295
+  ButtonRound26.Width               = 45
+  ButtonRound26.Height              = 40
+  'ButtonRound26.Visible             = 1
+  ButtonRound26.Active              = 1
+  ButtonRound26.Caption             = @ButtonRound26_Caption
+  ButtonRound26_Caption             = "U"
+  ButtonRound26.OnDownPtr           = 0
+  ButtonRound26.OnClickPtr          = 0
+  ButtonRound26.OnPressPtr          = 0
+
+  ButtonRound27.OwnerScreenAddress  = @Screen2
+  ButtonRound27.Order               = 21
+  ButtonRound27.Left_               = 498
+  ButtonRound27.Top                 = 295
+  ButtonRound27.Width               = 45
+  ButtonRound27.Height              = 40
+  'ButtonRound27.Visible             = 1
+  ButtonRound27.Active              = 1
+  ButtonRound27.Caption             = @ButtonRound27_Caption
+  ButtonRound27_Caption             = "I"
+  ButtonRound27.OnDownPtr           = 0
+  ButtonRound27.OnClickPtr          = 0
+  ButtonRound27.OnPressPtr          = 0
+
+  ButtonRound28.OwnerScreenAddress  = @Screen2
+  ButtonRound28.Order               = 22
+  ButtonRound28.Left_               = 553
+  ButtonRound28.Top                 = 295
+  ButtonRound28.Width               = 45
+  ButtonRound28.Height              = 40
+  'ButtonRound28.Visible             = 1
+  ButtonRound28.Active              = 1
+  ButtonRound28.Caption             = @ButtonRound28_Caption
+  ButtonRound28_Caption             = "O"
+  ButtonRound28.OnDownPtr           = 0
+  ButtonRound28.OnClickPtr          = 0
+  ButtonRound28.OnPressPtr          = 0
+
+  ButtonRound29.OwnerScreenAddress  = @Screen2
+  ButtonRound29.Order               = 23
+  ButtonRound29.Left_               = 608
+  ButtonRound29.Top                 = 295
+  ButtonRound29.Width               = 45
+  ButtonRound29.Height              = 40
+  'ButtonRound29.Visible             = 1
+  ButtonRound29.Active              = 1
+  ButtonRound29.Caption             = @ButtonRound29_Caption
+  ButtonRound29_Caption             = "P"
+  ButtonRound29.OnDownPtr           = 0
+  ButtonRound29.OnClickPtr          = 0
+  ButtonRound29.OnPressPtr          = 0
+
+  ButtonRound30.OwnerScreenAddress  = @Screen2
+  ButtonRound30.Order               = 24
+  ButtonRound30.Left_               = 663
+  ButtonRound30.Top                 = 295
+  ButtonRound30.Width               = 45
+  ButtonRound30.Height              = 40
+  'ButtonRound30.Visible             = 1
+  ButtonRound30.Active              = 1
+  ButtonRound30.Caption             = @ButtonRound30_Caption
+  ButtonRound30_Caption             = "Ü"
+  ButtonRound30.OnDownPtr           = 0
+  ButtonRound30.OnClickPtr          = 0
+  ButtonRound30.OnPressPtr          = 0
+
+  ButtonRound31.OwnerScreenAddress  = @Screen2
+  ButtonRound31.Order               = 25
+  ButtonRound31.Left_               = 718
+  ButtonRound31.Top                 = 295
+  ButtonRound31.Width               = 45
+  ButtonRound31.Height              = 40
+  'ButtonRound31.Visible             = 1
+  ButtonRound31.Active              = 1
+  ButtonRound31.Caption             = @ButtonRound31_Caption
+  ButtonRound31_Caption             = "*"
+  ButtonRound31.OnDownPtr           = 0
+  ButtonRound31.OnClickPtr          = 0
+  ButtonRound31.OnPressPtr          = 0
+
+  ButtonRound32.OwnerScreenAddress  = @Screen2
+  ButtonRound32.Order               = 26
+  ButtonRound32.Left_               = 28
+  ButtonRound32.Top                 = 340
+  ButtonRound32.Width               = 45
+  ButtonRound32.Height              = 40
+  'ButtonRound32.Visible             = 1
+  ButtonRound32.Active              = 1
+  ButtonRound32.Caption             = @ButtonRound32_Caption
+  ButtonRound32_Caption             = "Pos1"
+  ButtonRound32.OnDownPtr           = 0
+  ButtonRound32.OnClickPtr          = 0
+  ButtonRound32.OnPressPtr          = 49
+
+  ButtonRound33.OwnerScreenAddress  = @Screen2
+  ButtonRound33.Order               = 27
+  ButtonRound33.Left_               = 83
+  ButtonRound33.Top                 = 340
+  ButtonRound33.Width               = 45
+  ButtonRound33.Height              = 40
+  'ButtonRound33.Visible             = 1
+  ButtonRound33.Active              = 1
+  ButtonRound33.Caption             = @ButtonRound33_Caption
+  ButtonRound33_Caption             = "Ende"
+  ButtonRound33.OnDownPtr           = 0
+  ButtonRound33.OnClickPtr          = 0
+  ButtonRound33.OnPressPtr          = 52
+
+  ButtonRound34.OwnerScreenAddress  = @Screen2
+  ButtonRound34.Order               = 28
+  ButtonRound34.Left_               = 138
+  ButtonRound34.Top                 = 340
+  ButtonRound34.Width               = 45
+  ButtonRound34.Height              = 40
+  'ButtonRound34.Visible             = 1
+  ButtonRound34.Active              = 1
+  ButtonRound34.Caption             = @ButtonRound34_Caption
+  ButtonRound34_Caption             = "A"
+  ButtonRound34.OnDownPtr           = 0
+  ButtonRound34.OnClickPtr          = 0
+  ButtonRound34.OnPressPtr          = 0
+
+  ButtonRound35.OwnerScreenAddress  = @Screen2
+  ButtonRound35.Order               = 29
+  ButtonRound35.Left_               = 193
+  ButtonRound35.Top                 = 340
+  ButtonRound35.Width               = 45
+  ButtonRound35.Height              = 40
+  'ButtonRound35.Visible             = 1
+  ButtonRound35.Active              = 1
+  ButtonRound35.Caption             = @ButtonRound35_Caption
+  ButtonRound35_Caption             = "S"
+  ButtonRound35.OnDownPtr           = 0
+  ButtonRound35.OnClickPtr          = 0
+  ButtonRound35.OnPressPtr          = 0
+
+  ButtonRound36.OwnerScreenAddress  = @Screen2
+  ButtonRound36.Order               = 30
+  ButtonRound36.Left_               = 248
+  ButtonRound36.Top                 = 340
+  ButtonRound36.Width               = 45
+  ButtonRound36.Height              = 40
+  'ButtonRound36.Visible             = 1
+  ButtonRound36.Active              = 1
+  ButtonRound36.Caption             = @ButtonRound36_Caption
+  ButtonRound36_Caption             = "D"
+  ButtonRound36.OnDownPtr           = 0
+  ButtonRound36.OnClickPtr          = 0
+  ButtonRound36.OnPressPtr          = 0
+
+  ButtonRound37.OwnerScreenAddress  = @Screen2
+  ButtonRound37.Order               = 31
+  ButtonRound37.Left_               = 303
+  ButtonRound37.Top                 = 340
+  ButtonRound37.Width               = 45
+  ButtonRound37.Height              = 40
+  'ButtonRound37.Visible             = 1
+  ButtonRound37.Active              = 1
+  ButtonRound37.Caption             = @ButtonRound37_Caption
+  ButtonRound37_Caption             = "F"
+  ButtonRound37.OnDownPtr           = 0
+  ButtonRound37.OnClickPtr          = 0
+  ButtonRound37.OnPressPtr          = 0
+
+  ButtonRound38.OwnerScreenAddress  = @Screen2
+  ButtonRound38.Order               = 32
+  ButtonRound38.Left_               = 358
+  ButtonRound38.Top                 = 340
+  ButtonRound38.Width               = 45
+  ButtonRound38.Height              = 40
+  'ButtonRound38.Visible             = 1
+  ButtonRound38.Active              = 1
+  ButtonRound38.Caption             = @ButtonRound38_Caption
+  ButtonRound38_Caption             = "G"
+  ButtonRound38.OnDownPtr           = 0
+  ButtonRound38.OnClickPtr          = 0
+  ButtonRound38.OnPressPtr          = 0
+
+  ButtonRound39.OwnerScreenAddress  = @Screen2
+  ButtonRound39.Order               = 33
+  ButtonRound39.Left_               = 413
+  ButtonRound39.Top                 = 340
+  ButtonRound39.Width               = 45
+  ButtonRound39.Height              = 40
+  'ButtonRound39.Visible             = 1
+  ButtonRound39.Active              = 1
+  ButtonRound39.Caption             = @ButtonRound39_Caption
+  ButtonRound39_Caption             = "H"
+  ButtonRound39.OnDownPtr           = 0
+  ButtonRound39.OnClickPtr          = 0
+  ButtonRound39.OnPressPtr          = 0
+
+  ButtonRound40.OwnerScreenAddress  = @Screen2
+  ButtonRound40.Order               = 34
+  ButtonRound40.Left_               = 468
+  ButtonRound40.Top                 = 340
+  ButtonRound40.Width               = 45
+  ButtonRound40.Height              = 40
+  'ButtonRound40.Visible             = 1
+  ButtonRound40.Active              = 1
+  ButtonRound40.Caption             = @ButtonRound40_Caption
+  ButtonRound40_Caption             = "J"
+  ButtonRound40.OnDownPtr           = 0
+  ButtonRound40.OnClickPtr          = 0
+  ButtonRound40.OnPressPtr          = 0
+
+  ButtonRound41.OwnerScreenAddress  = @Screen2
+  ButtonRound41.Order               = 35
+  ButtonRound41.Left_               = 523
+  ButtonRound41.Top                 = 340
+  ButtonRound41.Width               = 45
+  ButtonRound41.Height              = 40
+  'ButtonRound41.Visible             = 1
+  ButtonRound41.Active              = 1
+  ButtonRound41.Caption             = @ButtonRound41_Caption
+  ButtonRound41_Caption             = "K"
+  ButtonRound41.OnDownPtr           = 0
+  ButtonRound41.OnClickPtr          = 0
+  ButtonRound41.OnPressPtr          = 0
+
+  ButtonRound42.OwnerScreenAddress  = @Screen2
+  ButtonRound42.Order               = 36
+  ButtonRound42.Left_               = 578
+  ButtonRound42.Top                 = 340
+  ButtonRound42.Width               = 45
+  ButtonRound42.Height              = 40
+  'ButtonRound42.Visible             = 1
+  ButtonRound42.Active              = 1
+  ButtonRound42.Caption             = @ButtonRound42_Caption
+  ButtonRound42_Caption             = "L"
+  ButtonRound42.OnDownPtr           = 0
+  ButtonRound42.OnClickPtr          = 0
+  ButtonRound42.OnPressPtr          = 0
+
+  ButtonRound43.OwnerScreenAddress  = @Screen2
+  ButtonRound43.Order               = 37
+  ButtonRound43.Left_               = 633
+  ButtonRound43.Top                 = 340
+  ButtonRound43.Width               = 45
+  ButtonRound43.Height              = 40
+  'ButtonRound43.Visible             = 1
+  ButtonRound43.Active              = 1
+  ButtonRound43.Caption             = @ButtonRound43_Caption
+  ButtonRound43_Caption             = "Ö"
+  ButtonRound43.OnDownPtr           = 0
+  ButtonRound43.OnClickPtr          = 0
+  ButtonRound43.OnPressPtr          = 0
+
+  ButtonRound44.OwnerScreenAddress  = @Screen2
+  ButtonRound44.Order               = 38
+  ButtonRound44.Left_               = 688
+  ButtonRound44.Top                 = 340
+  ButtonRound44.Width               = 75
+  ButtonRound44.Height              = 40
+  'ButtonRound44.Visible             = 1
+  ButtonRound44.Active              = 1
+  ButtonRound44.Caption             = @ButtonRound44_Caption
+  ButtonRound44_Caption             = "Enter"
+  ButtonRound44.OnDownPtr           = 0
+  ButtonRound44.OnClickPtr          = 0
+  ButtonRound44.OnPressPtr          = 13
+
+  ButtonRound45.OwnerScreenAddress  = @Screen2
+  ButtonRound45.Order               = 39
+  ButtonRound45.Left_               = 28
+  ButtonRound45.Top                 = 385
+  ButtonRound45.Width               = 75
+  ButtonRound45.Height              = 40
+  'ButtonRound45.Visible             = 1
+  ButtonRound45.Active              = 1
+  ButtonRound45.Caption             = @ButtonRound45_Caption
+  ButtonRound45_Caption             = "Shift"
+  ButtonRound45.OnDownPtr           = 0
+  ButtonRound45.OnClickPtr          = @execute_shift
+  ButtonRound45.OnPressPtr          = 0
+
+  ButtonRound46.OwnerScreenAddress  = @Screen2
+  ButtonRound46.Order               = 40
+  ButtonRound46.Left_               = 113
+  ButtonRound46.Top                 = 385
+  ButtonRound46.Width               = 45
+  ButtonRound46.Height              = 40
+  'ButtonRound46.Visible             = 1
+  ButtonRound46.Active              = 1
+  ButtonRound46.Caption             = @ButtonRound46_Caption
+  ButtonRound46_Caption             = ">"
+  ButtonRound46.OnDownPtr           = 0
+  ButtonRound46.OnClickPtr          = 0
+  ButtonRound46.OnPressPtr          = 0
+
+  ButtonRound47.OwnerScreenAddress  = @Screen2
+  ButtonRound47.Order               = 41
+  ButtonRound47.Left_               = 168
+  ButtonRound47.Top                 = 385
+  ButtonRound47.Width               = 45
+  ButtonRound47.Height              = 40
+  'ButtonRound47.Visible             = 1
+  ButtonRound47.Active              = 1
+  ButtonRound47.Caption             = @ButtonRound47_Caption
+  ButtonRound47_Caption             = "Y"
+  ButtonRound47.OnDownPtr           = 0
+  ButtonRound47.OnClickPtr          = 0
+  ButtonRound47.OnPressPtr          = 0
+
+  ButtonRound48.OwnerScreenAddress  = @Screen2
+  ButtonRound48.Order               = 42
+  ButtonRound48.Left_               = 223
+  ButtonRound48.Top                 = 385
+  ButtonRound48.Width               = 45
+  ButtonRound48.Height              = 40
+  'ButtonRound48.Visible             = 1
+  ButtonRound48.Active              = 1
+  ButtonRound48.Caption             = @ButtonRound48_Caption
+  ButtonRound48_Caption             = "X"
+  ButtonRound48.OnDownPtr           = 0
+  ButtonRound48.OnClickPtr          = 0
+  ButtonRound48.OnPressPtr          = 0
+
+  ButtonRound49.OwnerScreenAddress  = @Screen2
+  ButtonRound49.Order               = 43
+  ButtonRound49.Left_               = 278
+  ButtonRound49.Top                 = 385
+  ButtonRound49.Width               = 45
+  ButtonRound49.Height              = 40
+  'ButtonRound49.Visible             = 1
+  ButtonRound49.Active              = 1
+  ButtonRound49.Caption             = @ButtonRound49_Caption
+  ButtonRound49_Caption             = "C"
+  ButtonRound49.OnDownPtr           = 0
+  ButtonRound49.OnClickPtr          = 0
+  ButtonRound49.OnPressPtr          = 0
+
+  ButtonRound50.OwnerScreenAddress  = @Screen2
+  ButtonRound50.Order               = 44
+  ButtonRound50.Left_               = 333
+  ButtonRound50.Top                 = 385
+  ButtonRound50.Width               = 45
+  ButtonRound50.Height              = 40
+  'ButtonRound50.Visible             = 1
+  ButtonRound50.Active              = 1
+  ButtonRound50.Caption             = @ButtonRound50_Caption
+  ButtonRound50_Caption             = "V"
+  ButtonRound50.OnDownPtr           = 0
+  ButtonRound50.OnClickPtr          = 0
+  ButtonRound50.OnPressPtr          = 0
+
+  ButtonRound51.OwnerScreenAddress  = @Screen2
+  ButtonRound51.Order               = 45
+  ButtonRound51.Left_               = 388
+  ButtonRound51.Top                 = 385
+  ButtonRound51.Width               = 45
+  ButtonRound51.Height              = 40
+  'ButtonRound51.Visible             = 1
+  ButtonRound51.Active              = 1
+  ButtonRound51.Caption             = @ButtonRound51_Caption
+  ButtonRound51_Caption             = "B"
+  ButtonRound51.OnDownPtr           = 0
+  ButtonRound51.OnClickPtr          = 0
+  ButtonRound51.OnPressPtr          = 0
+
+  ButtonRound52.OwnerScreenAddress  = @Screen2
+  ButtonRound52.Order               = 46
+  ButtonRound52.Left_               = 443
+  ButtonRound52.Top                 = 385
+  ButtonRound52.Width               = 45
+  ButtonRound52.Height              = 40
+  'ButtonRound52.Visible             = 1
+  ButtonRound52.Active              = 1
+  ButtonRound52.Caption             = @ButtonRound52_Caption
+  ButtonRound52_Caption             = "N"
+  ButtonRound52.OnDownPtr           = 0
+  ButtonRound52.OnClickPtr          = 0
+  ButtonRound52.OnPressPtr          = 0
+
+  ButtonRound53.OwnerScreenAddress  = @Screen2
+  ButtonRound53.Order               = 47
+  ButtonRound53.Left_               = 498
+  ButtonRound53.Top                 = 385
+  ButtonRound53.Width               = 45
+  ButtonRound53.Height              = 40
+  'ButtonRound53.Visible             = 1
+  ButtonRound53.Active              = 1
+  ButtonRound53.Caption             = @ButtonRound53_Caption
+  ButtonRound53_Caption             = "M"
+  ButtonRound53.OnDownPtr           = 0
+  ButtonRound53.OnClickPtr          = 0
+  ButtonRound53.OnPressPtr          = 0
+
+  ButtonRound54.OwnerScreenAddress  = @Screen2
+  ButtonRound54.Order               = 48
+  ButtonRound54.Left_               = 553
+  ButtonRound54.Top                 = 385
+  ButtonRound54.Width               = 45
+  ButtonRound54.Height              = 40
+  'ButtonRound54.Visible             = 1
+  ButtonRound54.Active              = 1
+  ButtonRound54.Caption             = @ButtonRound54_Caption
+  ButtonRound54_Caption             = ";"
+  ButtonRound54.OnDownPtr           = 0
+  ButtonRound54.OnClickPtr          = 0
+  ButtonRound54.OnPressPtr          = 0
+
+  ButtonRound55.OwnerScreenAddress  = @Screen2
+  ButtonRound55.Order               = 49
+  ButtonRound55.Left_               = 608
+  ButtonRound55.Top                 = 385
+  ButtonRound55.Width               = 45
+  ButtonRound55.Height              = 40
+  'ButtonRound55.Visible             = 1
+  ButtonRound55.Active              = 1
+  ButtonRound55.Caption             = @ButtonRound55_Caption
+  ButtonRound55_Caption             = ":"
+  ButtonRound55.OnDownPtr           = 0
+  ButtonRound55.OnClickPtr          = 0
+  ButtonRound55.OnPressPtr          = 0
+
+  ButtonRound56.OwnerScreenAddress  = @Screen2
+  ButtonRound56.Order               = 50
+  ButtonRound56.Left_               = 663
+  ButtonRound56.Top                 = 385
+  ButtonRound56.Width               = 45
+  ButtonRound56.Height              = 40
+  'ButtonRound56.Visible             = 1
+  ButtonRound56.Active              = 1
+  ButtonRound56.Caption             = @ButtonRound56_Caption
+  ButtonRound56_Caption             = "_"
+  ButtonRound56.OnDownPtr           = 0
+  ButtonRound56.OnClickPtr          = 0
+  ButtonRound56.OnPressPtr          = 0
+
+  ButtonRound57.OwnerScreenAddress  = @Screen2
+  ButtonRound57.Order               = 51
+  ButtonRound57.Left_               = 718
+  ButtonRound57.Top                 = 385
+  ButtonRound57.Width               = 45
+  ButtonRound57.Height              = 40
+  'ButtonRound57.Visible             = 1
+  ButtonRound57.Active              = 1
+  ButtonRound57.Caption             = @ButtonRound57_Caption
+  ButtonRound57_Caption             = "Ä"
+  ButtonRound57.OnDownPtr           = 0
+  ButtonRound57.OnClickPtr          = 0
+  ButtonRound57.OnPressPtr          = 0
+
+  ButtonRound58.OwnerScreenAddress  = @Screen2
+  ButtonRound58.Order               = 52
+  ButtonRound58.Left_               = 28
+  ButtonRound58.Top                 = 430
+  ButtonRound58.Width               = 45
+  ButtonRound58.Height              = 40
+  'ButtonRound58.Visible             = 1
+  ButtonRound58.Active              = 1
+  ButtonRound58.Caption             = @ButtonRound58_Caption
+  ButtonRound58_Caption             = ""
+  ButtonRound58.OnDownPtr           = 0
+  ButtonRound58.OnClickPtr          = 0
+  ButtonRound58.OnPressPtr          = 0
+
+  ButtonRound59.OwnerScreenAddress  = @Screen2
+  ButtonRound59.Order               = 53
+  ButtonRound59.Left_               = 83
+  ButtonRound59.Top                 = 430
+  ButtonRound59.Width               = 45
+  ButtonRound59.Height              = 40
+  'ButtonRound59.Visible             = 1
+  ButtonRound59.Active              = 1
+  ButtonRound59.Caption             = @ButtonRound59_Caption
+  ButtonRound59_Caption             = ""
+  ButtonRound59.OnDownPtr           = 0
+  ButtonRound59.OnClickPtr          = 0
+  ButtonRound59.OnPressPtr          = 0
+
+  ButtonRound60.OwnerScreenAddress  = @Screen2
+  ButtonRound60.Order               = 54
+  ButtonRound60.Left_               = 138
+  ButtonRound60.Top                 = 430
+  ButtonRound60.Width               = 45
+  ButtonRound60.Height              = 40
+  'ButtonRound60.Visible             = 1
+  ButtonRound60.Active              = 1
+  ButtonRound60.Caption             = @ButtonRound60_Caption
+  ButtonRound60_Caption             = ""
+  ButtonRound60.OnDownPtr           = 0
+  ButtonRound60.OnClickPtr          = 0
+  ButtonRound60.OnPressPtr          = 0
+
+  ButtonRound237.OwnerScreenAddress  = @Screen2
+  ButtonRound237.Order               = 55
+  ButtonRound237.Left_               = 193
+  ButtonRound237.Top                 = 430
+  ButtonRound237.Width               = 45
+  ButtonRound237.Height              = 40
+  'ButtonRound237.Visible             = 1
+  ButtonRound237.Active              = 1
+  ButtonRound237.Caption             = @ButtonRound237_Caption
+  ButtonRound237_Caption             = ""
+  ButtonRound237.OnDownPtr           = 0
+  ButtonRound237.OnClickPtr          = 0
+  ButtonRound237.OnPressPtr          = 0
+
+  ButtonRound238.OwnerScreenAddress  = @Screen2
+  ButtonRound238.Order               = 56
+  ButtonRound238.Left_               = 248
+  ButtonRound238.Top                 = 430
+  ButtonRound238.Width               = 210
+  ButtonRound238.Height              = 40
+  'ButtonRound238.Visible             = 1
+  ButtonRound238.Active              = 1
+  ButtonRound238.Caption             = @ButtonRound238_Caption
+  ButtonRound238_Caption             = " "
+  ButtonRound238.OnDownPtr           = 0
+  ButtonRound238.OnClickPtr          = 0
+  ButtonRound238.OnPressPtr          = 0
+
+  ButtonRound239.OwnerScreenAddress  = @Screen2
+  ButtonRound239.Order               = 57
+  ButtonRound239.Left_               = 468
+  ButtonRound239.Top                 = 430
+  ButtonRound239.Width               = 45
+  ButtonRound239.Height              = 40
+  'ButtonRound239.Visible             = 1
+  ButtonRound239.Active              = 1
+  ButtonRound239.Caption             = @ButtonRound239_Caption
+  ButtonRound239_Caption             = "AltGr"
+  ButtonRound239.OnDownPtr           = 0
+  ButtonRound239.OnClickPtr          = @execute_AltGr
+  ButtonRound239.OnPressPtr          = 0
+
+  ButtonRound243.OwnerScreenAddress  = @Screen2
+  ButtonRound243.Order               = 58
+  ButtonRound243.Left_               = 523
+  ButtonRound243.Top                 = 430
+  ButtonRound243.Width               = 45
+  ButtonRound243.Height              = 40
+  'ButtonRound243.Visible             = 1
+  ButtonRound243.Active              = 1
+  ButtonRound243.Caption             = @ButtonRound243_Caption
+  ButtonRound243_Caption             = "`"
+  ButtonRound243.OnDownPtr           = 0
+  ButtonRound243.OnClickPtr          = 0
+  ButtonRound243.OnPressPtr          = 0
+
+  ButtonRound244.OwnerScreenAddress  = @Screen2
+  ButtonRound244.Order               = 59
+  ButtonRound244.Left_               = 578
+  ButtonRound244.Top                 = 430
+  ButtonRound244.Width               = 45
+  ButtonRound244.Height              = 40
+  'ButtonRound244.Visible             = 1
+  ButtonRound244.Active              = 1
+  ButtonRound244.Caption             = @ButtonRound244_Caption
+  ButtonRound244_Caption             = "'"
+  ButtonRound244.OnDownPtr           = 0
+  ButtonRound244.OnClickPtr          = 0
+  ButtonRound244.OnPressPtr          = 0
+
+  ButtonRound245.OwnerScreenAddress  = @Screen2
+  ButtonRound245.Order               = 60
+  ButtonRound245.Left_               = 738
+  ButtonRound245.Top                 = 430
+  ButtonRound245.Width               = 25
+  ButtonRound245.Height              = 40
+  'ButtonRound245.Visible             = 1
+  ButtonRound245.Active              = 1
+  ButtonRound245.Caption             = @ButtonRound245_Caption
+  ButtonRound245_Caption             = "dn"
+  ButtonRound245.OnDownPtr           = 0
+  ButtonRound245.OnClickPtr          = 0
+  ButtonRound245.OnPressPtr          = 66
+
+  ButtonRound246.OwnerScreenAddress  = @Screen2
+  ButtonRound246.Order               = 61
+  ButtonRound246.Left_               = 703
+  ButtonRound246.Top                 = 430
+  ButtonRound246.Width               = 25
+  ButtonRound246.Height              = 40
+  'ButtonRound246.Visible             = 1
+  ButtonRound246.Active              = 1
+  ButtonRound246.Caption             = @ButtonRound246_Caption
+  ButtonRound246_Caption             = "up"
+  ButtonRound246.OnDownPtr           = 0
+  ButtonRound246.OnClickPtr          = 0
+  ButtonRound246.OnPressPtr          = 65
+
+  ButtonRound247.OwnerScreenAddress  = @Screen2
+  ButtonRound247.Order               = 62
+  ButtonRound247.Left_               = 668
+  ButtonRound247.Top                 = 430
+  ButtonRound247.Width               = 25
+  ButtonRound247.Height              = 40
+  'ButtonRound247.Visible             = 1
+  ButtonRound247.Active              = 1
+  ButtonRound247.Caption             = @ButtonRound247_Caption
+  ButtonRound247_Caption             = ">"
+  ButtonRound247.OnDownPtr           = 0
+  ButtonRound247.OnClickPtr          = 0
+  ButtonRound247.OnPressPtr          = 67
+
+  ButtonRound248.OwnerScreenAddress  = @Screen2
+  ButtonRound248.Order               = 63
+  ButtonRound248.Left_               = 633
+  ButtonRound248.Top                 = 430
+  ButtonRound248.Width               = 25
+  ButtonRound248.Height              = 40
+  'ButtonRound248.Visible             = 1
+  ButtonRound248.Active              = 1
+  ButtonRound248.Caption             = @ButtonRound248_Caption
+  ButtonRound248_Caption             = "<"
+  ButtonRound248.OnDownPtr           = 0
+  ButtonRound248.OnClickPtr          = 0
+  ButtonRound248.OnPressPtr          = 68
+
+  ButtonRound249.OwnerScreenAddress  = @Screen4
+  ButtonRound249.Order               = 0
+  ButtonRound249.Left_               = 28
+  ButtonRound249.Top                 = 250
+  ButtonRound249.Width               = 45
+  ButtonRound249.Height              = 40
+  'ButtonRound249.Visible             = 1
+  ButtonRound249.Active              = 1
+  ButtonRound249.Caption             = @ButtonRound249_Caption
+  ButtonRound249_Caption             = "" + chr(177)
+  ButtonRound249.OnDownPtr           = 0
+  ButtonRound249.OnClickPtr          = 0
+  ButtonRound249.OnPressPtr          = 0
+
+  ButtonRound250.OwnerScreenAddress  = @Screen4
+  ButtonRound250.Order               = 1
+  ButtonRound250.Left_               = 83
+  ButtonRound250.Top                 = 250
+  ButtonRound250.Width               = 45
+  ButtonRound250.Height              = 40
+  'ButtonRound250.Visible             = 1
+  ButtonRound250.Active              = 1
+  ButtonRound250.Caption             = @ButtonRound250_Caption
+  ButtonRound250_Caption             = ""+chr(34)
+  ButtonRound250.OnDownPtr           = 0
+  ButtonRound250.OnClickPtr          = 0
+  ButtonRound250.OnPressPtr          = 0
+
+  ButtonRound251.OwnerScreenAddress  = @Screen4
+  ButtonRound251.Order               = 2
+  ButtonRound251.Left_               = 138
+  ButtonRound251.Top                 = 250
+  ButtonRound251.Width               = 45
+  ButtonRound251.Height              = 40
+  'ButtonRound251.Visible             = 1
+  ButtonRound251.Active              = 1
+  ButtonRound251.Caption             = @ButtonRound251_Caption
+  ButtonRound251_Caption             = ""+chr(178)
+  ButtonRound251.OnDownPtr           = 0
+  ButtonRound251.OnClickPtr          = 0
+  ButtonRound251.OnPressPtr          = 0
+
+  ButtonRound252.OwnerScreenAddress  = @Screen4
+  ButtonRound252.Order               = 3
+  ButtonRound252.Left_               = 193
+  ButtonRound252.Top                 = 250
+  ButtonRound252.Width               = 45
+  ButtonRound252.Height              = 40
+  'ButtonRound252.Visible             = 1
+  ButtonRound252.Active              = 1
+  ButtonRound252.Caption             = @ButtonRound252_Caption
+  ButtonRound252_Caption             = ""+chr(179)
+  ButtonRound252.OnDownPtr           = 0
+  ButtonRound252.OnClickPtr          = 0
+  ButtonRound252.OnPressPtr          = 0
+
+  ButtonRound253.OwnerScreenAddress  = @Screen4
+  ButtonRound253.Order               = 4
+  ButtonRound253.Left_               = 248
+  ButtonRound253.Top                 = 250
+  ButtonRound253.Width               = 45
+  ButtonRound253.Height              = 40
+  'ButtonRound253.Visible             = 1
+  ButtonRound253.Active              = 1
+  ButtonRound253.Caption             = @ButtonRound253_Caption
+  ButtonRound253_Caption             = "%"
+  ButtonRound253.OnDownPtr           = 0
+  ButtonRound253.OnClickPtr          = 0
+  ButtonRound253.OnPressPtr          = 0
+
+  ButtonRound254.OwnerScreenAddress  = @Screen4
+  ButtonRound254.Order               = 5
+  ButtonRound254.Left_               = 303
+  ButtonRound254.Top                 = 250
+  ButtonRound254.Width               = 45
+  ButtonRound254.Height              = 40
+  'ButtonRound254.Visible             = 1
+  ButtonRound254.Active              = 1
+  ButtonRound254.Caption             = @ButtonRound254_Caption
+  ButtonRound254_Caption             = "&"
+  ButtonRound254.OnDownPtr           = 0
+  ButtonRound254.OnClickPtr          = 0
+  ButtonRound254.OnPressPtr          = 0
+
+  ButtonRound255.OwnerScreenAddress  = @Screen4
+  ButtonRound255.Order               = 6
+  ButtonRound255.Left_               = 358
+  ButtonRound255.Top                 = 250
+  ButtonRound255.Width               = 45
+  ButtonRound255.Height              = 40
+  'ButtonRound255.Visible             = 1
+  ButtonRound255.Active              = 1
+  ButtonRound255.Caption             = @ButtonRound255_Caption
+  ButtonRound255_Caption             = "6"
+  ButtonRound255.OnDownPtr           = 0
+  ButtonRound255.OnClickPtr          = 0
+  ButtonRound255.OnPressPtr          = 0
+
+  ButtonRound256.OwnerScreenAddress  = @Screen4
+  ButtonRound256.Order               = 7
+  ButtonRound256.Left_               = 413
+  ButtonRound256.Top                 = 250
+  ButtonRound256.Width               = 45
+  ButtonRound256.Height              = 40
+  'ButtonRound256.Visible             = 1
+  ButtonRound256.Active              = 1
+  ButtonRound256.Caption             = @ButtonRound256_Caption
+  ButtonRound256_Caption             = "{"
+  ButtonRound256.OnDownPtr           = 0
+  ButtonRound256.OnClickPtr          = 0
+  ButtonRound256.OnPressPtr          = 0
+
+  ButtonRound257.OwnerScreenAddress  = @Screen4
+  ButtonRound257.Order               = 8
+  ButtonRound257.Left_               = 468
+  ButtonRound257.Top                 = 250
+  ButtonRound257.Width               = 45
+  ButtonRound257.Height              = 40
+  'ButtonRound257.Visible             = 1
+  ButtonRound257.Active              = 1
+  ButtonRound257.Caption             = @ButtonRound257_Caption
+  ButtonRound257_Caption             = "["
+  ButtonRound257.OnDownPtr           = 0
+  ButtonRound257.OnClickPtr          = 0
+  ButtonRound257.OnPressPtr          = 0
+
+  ButtonRound258.OwnerScreenAddress  = @Screen4
+  ButtonRound258.Order               = 9
+  ButtonRound258.Left_               = 523
+  ButtonRound258.Top                 = 250
+  ButtonRound258.Width               = 45
+  ButtonRound258.Height              = 40
+  'ButtonRound258.Visible             = 1
+  ButtonRound258.Active              = 1
+  ButtonRound258.Caption             = @ButtonRound258_Caption
+  ButtonRound258_Caption             = "]"
+  ButtonRound258.OnDownPtr           = 0
+  ButtonRound258.OnClickPtr          = 0
+  ButtonRound258.OnPressPtr          = 0
+
+  ButtonRound259.OwnerScreenAddress  = @Screen4
+  ButtonRound259.Order               = 10
+  ButtonRound259.Left_               = 578
+  ButtonRound259.Top                 = 250
+  ButtonRound259.Width               = 45
+  ButtonRound259.Height              = 40
+  'ButtonRound259.Visible             = 1
+  ButtonRound259.Active              = 1
+  ButtonRound259.Caption             = @ButtonRound259_Caption
+  ButtonRound259_Caption             = "}"
+  ButtonRound259.OnDownPtr           = 0
+  ButtonRound259.OnClickPtr          = 0
+  ButtonRound259.OnPressPtr          = 0
+
+  ButtonRound260.OwnerScreenAddress  = @Screen4
+  ButtonRound260.Order               = 11
+  ButtonRound260.Left_               = 633
+  ButtonRound260.Top                 = 250
+  ButtonRound260.Width               = 45
+  ButtonRound260.Height              = 40
+  'ButtonRound260.Visible             = 1
+  ButtonRound260.Active              = 1
+  ButtonRound260.Caption             = @ButtonRound260_Caption
+  ButtonRound260_Caption             = "\"
+  ButtonRound260.OnDownPtr           = 0
+  ButtonRound260.OnClickPtr          = 0
+  ButtonRound260.OnPressPtr          = 0
+
+  ButtonRound261.OwnerScreenAddress  = @Screen4
+  ButtonRound261.Order               = 12
+  ButtonRound261.Left_               = 688
+  ButtonRound261.Top                 = 250
+  ButtonRound261.Width               = 75
+  ButtonRound261.Height              = 40
+  'ButtonRound261.Visible             = 1
+  ButtonRound261.Active              = 1
+  ButtonRound261.Caption             = @ButtonRound261_Caption
+  ButtonRound261_Caption             = "Del"
+  ButtonRound261.OnDownPtr           = 0
+  ButtonRound261.OnClickPtr          = 0
+  ButtonRound261.OnPressPtr          = 8
+
+  ButtonRound262.OwnerScreenAddress  = @Screen4
+  ButtonRound262.Order               = 13
+  ButtonRound262.Left_               = 28
+  ButtonRound262.Top                 = 295
+  ButtonRound262.Width               = 75
+  ButtonRound262.Height              = 40
+  'ButtonRound262.Visible             = 1
+  ButtonRound262.Active              = 1
+  ButtonRound262.Caption             = @ButtonRound262_Caption
+  ButtonRound262_Caption             = "->|"
+  ButtonRound262.OnDownPtr           = 0
+  ButtonRound262.OnClickPtr          = 0
+  ButtonRound262.OnPressPtr          = 9
+
+  ButtonRound263.OwnerScreenAddress  = @Screen4
+  ButtonRound263.Order               = 14
+  ButtonRound263.Left_               = 113
+  ButtonRound263.Top                 = 295
+  ButtonRound263.Width               = 45
+  ButtonRound263.Height              = 40
+  'ButtonRound263.Visible             = 1
+  ButtonRound263.Active              = 1
+  ButtonRound263.Caption             = @ButtonRound263_Caption
+  ButtonRound263_Caption             = "@"
+  ButtonRound263.OnDownPtr           = 0
+  ButtonRound263.OnClickPtr          = 0
+  ButtonRound263.OnPressPtr          = 0
+
+  ButtonRound264.OwnerScreenAddress  = @Screen4
+  ButtonRound264.Order               = 15
+  ButtonRound264.Left_               = 168
+  ButtonRound264.Top                 = 295
+  ButtonRound264.Width               = 45
+  ButtonRound264.Height              = 40
+  'ButtonRound264.Visible             = 1
+  ButtonRound264.Active              = 1
+  ButtonRound264.Caption             = @ButtonRound264_Caption
+  ButtonRound264_Caption             = ""+chr(140)
+  ButtonRound264.OnDownPtr           = 0
+  ButtonRound264.OnClickPtr          = 0
+  ButtonRound264.OnPressPtr          = 0
+
+  ButtonRound265.OwnerScreenAddress  = @Screen4
+  ButtonRound265.Order               = 16
+  ButtonRound265.Left_               = 223
+  ButtonRound265.Top                 = 295
+  ButtonRound265.Width               = 45
+  ButtonRound265.Height              = 40
+  'ButtonRound265.Visible             = 1
+  ButtonRound265.Active              = 1
+  ButtonRound265.Caption             = @ButtonRound265_Caption
+  ButtonRound265_Caption             = "€"
+  ButtonRound265.OnDownPtr           = 0
+  ButtonRound265.OnClickPtr          = 0
+  ButtonRound265.OnPressPtr          = 0
+
+  ButtonRound266.OwnerScreenAddress  = @Screen4
+  ButtonRound266.Order               = 17
+  ButtonRound266.Left_               = 278
+  ButtonRound266.Top                 = 295
+  ButtonRound266.Width               = 45
+  ButtonRound266.Height              = 40
+  'ButtonRound266.Visible             = 1
+  ButtonRound266.Active              = 1
+  ButtonRound266.Caption             = @ButtonRound266_Caption
+  ButtonRound266_Caption             = ""+chr(182)
+  ButtonRound266.OnDownPtr           = 0
+  ButtonRound266.OnClickPtr          = 0
+  ButtonRound266.OnPressPtr          = 0
+
+  ButtonRound267.OwnerScreenAddress  = @Screen4
+  ButtonRound267.Order               = 18
+  ButtonRound267.Left_               = 333
+  ButtonRound267.Top                 = 295
+  ButtonRound267.Width               = 45
+  ButtonRound267.Height              = 40
+  'ButtonRound267.Visible             = 1
+  ButtonRound267.Active              = 1
+  ButtonRound267.Caption             = @ButtonRound267_Caption
+  ButtonRound267_Caption             = ""+chr(216)
+  ButtonRound267.OnDownPtr           = 0
+  ButtonRound267.OnClickPtr          = 0
+  ButtonRound267.OnPressPtr          = 0
+
+  ButtonRound268.OwnerScreenAddress  = @Screen4
+  ButtonRound268.Order               = 19
+  ButtonRound268.Left_               = 388
+  ButtonRound268.Top                 = 295
+  ButtonRound268.Width               = 45
+  ButtonRound268.Height              = 40
+  'ButtonRound268.Visible             = 1
+  ButtonRound268.Active              = 1
+  ButtonRound268.Caption             = @ButtonRound268_Caption
+  ButtonRound268_Caption             = ""+chr(198)
+  ButtonRound268.OnDownPtr           = 0
+  ButtonRound268.OnClickPtr          = 0
+  ButtonRound268.OnPressPtr          = 0
+
+  ButtonRound269.OwnerScreenAddress  = @Screen4
+  ButtonRound269.Order               = 20
+  ButtonRound269.Left_               = 443
+  ButtonRound269.Top                 = 295
+  ButtonRound269.Width               = 45
+  ButtonRound269.Height              = 40
+  'ButtonRound269.Visible             = 1
+  ButtonRound269.Active              = 1
+  ButtonRound269.Caption             = @ButtonRound269_Caption
+  ButtonRound269_Caption             = ""+chr(230)
+  ButtonRound269.OnDownPtr           = 0
+  ButtonRound269.OnClickPtr          = 0
+  ButtonRound269.OnPressPtr          = 0
+
+  ButtonRound270.OwnerScreenAddress  = @Screen4
+  ButtonRound270.Order               = 21
+  ButtonRound270.Left_               = 498
+  ButtonRound270.Top                 = 295
+  ButtonRound270.Width               = 45
+  ButtonRound270.Height              = 40
+  'ButtonRound270.Visible             = 1
+  ButtonRound270.Active              = 1
+  ButtonRound270.Caption             = @ButtonRound270_Caption
+  ButtonRound270_Caption             = "i"
+  ButtonRound270.OnDownPtr           = 0
+  ButtonRound270.OnClickPtr          = 0
+  ButtonRound270.OnPressPtr          = 0
+
+  ButtonRound271.OwnerScreenAddress  = @Screen4
+  ButtonRound271.Order               = 22
+  ButtonRound271.Left_               = 553
+  ButtonRound271.Top                 = 295
+  ButtonRound271.Width               = 45
+  ButtonRound271.Height              = 40
+  'ButtonRound271.Visible             = 1
+  ButtonRound271.Active              = 1
+  ButtonRound271.Caption             = @ButtonRound271_Caption
+  ButtonRound271_Caption             = "o"
+  ButtonRound271.OnDownPtr           = 0
+  ButtonRound271.OnClickPtr          = 0
+  ButtonRound271.OnPressPtr          = 0
+
+  ButtonRound272.OwnerScreenAddress  = @Screen4
+  ButtonRound272.Order               = 23
+  ButtonRound272.Left_               = 608
+  ButtonRound272.Top                 = 295
+  ButtonRound272.Width               = 45
+  ButtonRound272.Height              = 40
+  'ButtonRound272.Visible             = 1
+  ButtonRound272.Active              = 1
+  ButtonRound272.Caption             = @ButtonRound272_Caption
+  ButtonRound272_Caption             = "p"
+  ButtonRound272.OnDownPtr           = 0
+  ButtonRound272.OnClickPtr          = 0
+  ButtonRound272.OnPressPtr          = 0
+
+  ButtonRound273.OwnerScreenAddress  = @Screen4
+  ButtonRound273.Order               = 24
+  ButtonRound273.Left_               = 663
+  ButtonRound273.Top                 = 295
+  ButtonRound273.Width               = 45
+  ButtonRound273.Height              = 40
+  'ButtonRound273.Visible             = 1
+  ButtonRound273.Active              = 1
+  ButtonRound273.Caption             = @ButtonRound273_Caption
+  ButtonRound273_Caption             = "ü"
+  ButtonRound273.OnDownPtr           = 0
+  ButtonRound273.OnClickPtr          = 0
+  ButtonRound273.OnPressPtr          = 0
+
+  ButtonRound274.OwnerScreenAddress  = @Screen4
+  ButtonRound274.Order               = 25
+  ButtonRound274.Left_               = 718
+  ButtonRound274.Top                 = 295
+  ButtonRound274.Width               = 45
+  ButtonRound274.Height              = 40
+  'ButtonRound274.Visible             = 1
+  ButtonRound274.Active              = 1
+  ButtonRound274.Caption             = @ButtonRound274_Caption
+  ButtonRound274_Caption             = "~"
+  ButtonRound274.OnDownPtr           = 0
+  ButtonRound274.OnClickPtr          = 0
+  ButtonRound274.OnPressPtr          = 0
+
+  ButtonRound275.OwnerScreenAddress  = @Screen4
+  ButtonRound275.Order               = 26
+  ButtonRound275.Left_               = 28
+  ButtonRound275.Top                 = 340
+  ButtonRound275.Width               = 45
+  ButtonRound275.Height              = 40
+  'ButtonRound275.Visible             = 1
+  ButtonRound275.Active              = 1
+  ButtonRound275.Caption             = @ButtonRound275_Caption
+  ButtonRound275_Caption             = " "
+  ButtonRound275.OnDownPtr           = 0
+  ButtonRound275.OnClickPtr          = 0
+  ButtonRound275.OnPressPtr          = 0
+
+  ButtonRound276.OwnerScreenAddress  = @Screen4
+  ButtonRound276.Order               = 27
+  ButtonRound276.Left_               = 83
+  ButtonRound276.Top                 = 340
+  ButtonRound276.Width               = 45
+  ButtonRound276.Height              = 40
+  'ButtonRound276.Visible             = 1
+  ButtonRound276.Active              = 1
+  ButtonRound276.Caption             = @ButtonRound276_Caption
+  ButtonRound276_Caption             = " "
+  ButtonRound276.OnDownPtr           = 0
+  ButtonRound276.OnClickPtr          = 0
+  ButtonRound276.OnPressPtr          = 0
+
+  ButtonRound277.OwnerScreenAddress  = @Screen4
+  ButtonRound277.Order               = 28
+  ButtonRound277.Left_               = 138
+  ButtonRound277.Top                 = 340
+  ButtonRound277.Width               = 45
+  ButtonRound277.Height              = 40
+  'ButtonRound277.Visible             = 1
+  ButtonRound277.Active              = 1
+  ButtonRound277.Caption             = @ButtonRound277_Caption
+  ButtonRound277_Caption             = "a"
+  ButtonRound277.OnDownPtr           = 0
+  ButtonRound277.OnClickPtr          = 0
+  ButtonRound277.OnPressPtr          = 0
+
+  ButtonRound278.OwnerScreenAddress  = @Screen4
+  ButtonRound278.Order               = 29
+  ButtonRound278.Left_               = 193
+  ButtonRound278.Top                 = 340
+  ButtonRound278.Width               = 45
+  ButtonRound278.Height              = 40
+  'ButtonRound278.Visible             = 1
+  ButtonRound278.Active              = 1
+  ButtonRound278.Caption             = @ButtonRound278_Caption
+  ButtonRound278_Caption             = "s"
+  ButtonRound278.OnDownPtr           = 0
+  ButtonRound278.OnClickPtr          = 0
+  ButtonRound278.OnPressPtr          = 0
+
+  ButtonRound279.OwnerScreenAddress  = @Screen4
+  ButtonRound279.Order               = 30
+  ButtonRound279.Left_               = 248
+  ButtonRound279.Top                 = 340
+  ButtonRound279.Width               = 45
+  ButtonRound279.Height              = 40
+  'ButtonRound279.Visible             = 1
+  ButtonRound279.Active              = 1
+  ButtonRound279.Caption             = @ButtonRound279_Caption
+  ButtonRound279_Caption             = "d"
+  ButtonRound279.OnDownPtr           = 0
+  ButtonRound279.OnClickPtr          = 0
+  ButtonRound279.OnPressPtr          = 0
+
+  ButtonRound280.OwnerScreenAddress  = @Screen4
+  ButtonRound280.Order               = 31
+  ButtonRound280.Left_               = 303
+  ButtonRound280.Top                 = 340
+  ButtonRound280.Width               = 45
+  ButtonRound280.Height              = 40
+  'ButtonRound280.Visible             = 1
+  ButtonRound280.Active              = 1
+  ButtonRound280.Caption             = @ButtonRound280_Caption
+  ButtonRound280_Caption             = "f"
+  ButtonRound280.OnDownPtr           = 0
+  ButtonRound280.OnClickPtr          = 0
+  ButtonRound280.OnPressPtr          = 0
+
+  ButtonRound281.OwnerScreenAddress  = @Screen4
+  ButtonRound281.Order               = 32
+  ButtonRound281.Left_               = 358
+  ButtonRound281.Top                 = 340
+  ButtonRound281.Width               = 45
+  ButtonRound281.Height              = 40
+  'ButtonRound281.Visible             = 1
+  ButtonRound281.Active              = 1
+  ButtonRound281.Caption             = @ButtonRound281_Caption
+  ButtonRound281_Caption             = "g"
+  ButtonRound281.OnDownPtr           = 0
+  ButtonRound281.OnClickPtr          = 0
+  ButtonRound281.OnPressPtr          = 0
+
+  ButtonRound282.OwnerScreenAddress  = @Screen4
+  ButtonRound282.Order               = 33
+  ButtonRound282.Left_               = 413
+  ButtonRound282.Top                 = 340
+  ButtonRound282.Width               = 45
+  ButtonRound282.Height              = 40
+  'ButtonRound282.Visible             = 1
+  ButtonRound282.Active              = 1
+  ButtonRound282.Caption             = @ButtonRound282_Caption
+  ButtonRound282_Caption             = "h"
+  ButtonRound282.OnDownPtr           = 0
+  ButtonRound282.OnClickPtr          = 0
+  ButtonRound282.OnPressPtr          = 0
+
+  ButtonRound283.OwnerScreenAddress  = @Screen4
+  ButtonRound283.Order               = 34
+  ButtonRound283.Left_               = 468
+  ButtonRound283.Top                 = 340
+  ButtonRound283.Width               = 45
+  ButtonRound283.Height              = 40
+  'ButtonRound283.Visible             = 1
+  ButtonRound283.Active              = 1
+  ButtonRound283.Caption             = @ButtonRound283_Caption
+  ButtonRound283_Caption             = "j"
+  ButtonRound283.OnDownPtr           = 0
+  ButtonRound283.OnClickPtr          = 0
+  ButtonRound283.OnPressPtr          = 0
+
+  ButtonRound284.OwnerScreenAddress  = @Screen4
+  ButtonRound284.Order               = 35
+  ButtonRound284.Left_               = 523
+  ButtonRound284.Top                 = 340
+  ButtonRound284.Width               = 45
+  ButtonRound284.Height              = 40
+  'ButtonRound284.Visible             = 1
+  ButtonRound284.Active              = 1
+  ButtonRound284.Caption             = @ButtonRound284_Caption
+  ButtonRound284_Caption             = "k"
+  ButtonRound284.OnDownPtr           = 0
+  ButtonRound284.OnClickPtr          = 0
+  ButtonRound284.OnPressPtr          = 0
+
+  ButtonRound285.OwnerScreenAddress  = @Screen4
+  ButtonRound285.Order               = 36
+  ButtonRound285.Left_               = 578
+  ButtonRound285.Top                 = 340
+  ButtonRound285.Width               = 45
+  ButtonRound285.Height              = 40
+  'ButtonRound285.Visible             = 1
+  ButtonRound285.Active              = 1
+  ButtonRound285.Caption             = @ButtonRound285_Caption
+  ButtonRound285_Caption             = "l"
+  ButtonRound285.OnDownPtr           = 0
+  ButtonRound285.OnClickPtr          = 0
+  ButtonRound285.OnPressPtr          = 0
+
+  ButtonRound286.OwnerScreenAddress  = @Screen4
+  ButtonRound286.Order               = 37
+  ButtonRound286.Left_               = 633
+  ButtonRound286.Top                 = 340
+  ButtonRound286.Width               = 45
+  ButtonRound286.Height              = 40
+  'ButtonRound286.Visible             = 1
+  ButtonRound286.Active              = 1
+  ButtonRound286.Caption             = @ButtonRound286_Caption
+  ButtonRound286_Caption             = "ö"
+  ButtonRound286.OnDownPtr           = 0
+  ButtonRound286.OnClickPtr          = 0
+  ButtonRound286.OnPressPtr          = 0
+
+  ButtonRound287.OwnerScreenAddress  = @Screen4
+  ButtonRound287.Order               = 38
+  ButtonRound287.Left_               = 688
+  ButtonRound287.Top                 = 340
+  ButtonRound287.Width               = 75
+  ButtonRound287.Height              = 40
+  'ButtonRound287.Visible             = 1
+  ButtonRound287.Active              = 1
+  ButtonRound287.Caption             = @ButtonRound287_Caption
+  ButtonRound287_Caption             = "Enter"
+  ButtonRound287.OnDownPtr           = 0
+  ButtonRound287.OnClickPtr          = 0
+  ButtonRound287.OnPressPtr          = 0
+
+  ButtonRound288.OwnerScreenAddress  = @Screen4
+  ButtonRound288.Order               = 39
+  ButtonRound288.Left_               = 28
+  ButtonRound288.Top                 = 385
+  ButtonRound288.Width               = 75
+  ButtonRound288.Height              = 40
+  'ButtonRound288.Visible             = 1
+  ButtonRound288.Active              = 1
+  ButtonRound288.Caption             = @ButtonRound288_Caption
+  ButtonRound288_Caption             = ""
+  ButtonRound288.OnDownPtr           = 0
+  ButtonRound288.OnClickPtr          = 0
+  ButtonRound288.OnPressPtr          = 0
+
+  ButtonRound289.OwnerScreenAddress  = @Screen4
+  ButtonRound289.Order               = 40
+  ButtonRound289.Left_               = 113
+  ButtonRound289.Top                 = 385
+  ButtonRound289.Width               = 45
+  ButtonRound289.Height              = 40
+  'ButtonRound289.Visible             = 1
+  ButtonRound289.Active              = 1
+  ButtonRound289.Caption             = @ButtonRound289_Caption
+  ButtonRound289_Caption             = "|"
+  ButtonRound289.OnDownPtr           = 0
+  ButtonRound289.OnClickPtr          = 0
+  ButtonRound289.OnPressPtr          = 0
+
+  ButtonRound290.OwnerScreenAddress  = @Screen4
+  ButtonRound290.Order               = 41
+  ButtonRound290.Left_               = 168
+  ButtonRound290.Top                 = 385
+  ButtonRound290.Width               = 45
+  ButtonRound290.Height              = 40
+  'ButtonRound290.Visible             = 1
+  ButtonRound290.Active              = 1
+  ButtonRound290.Caption             = @ButtonRound290_Caption
+  ButtonRound290_Caption             = "y"
+  ButtonRound290.OnDownPtr           = 0
+  ButtonRound290.OnClickPtr          = 0
+  ButtonRound290.OnPressPtr          = 0
+
+  ButtonRound291.OwnerScreenAddress  = @Screen4
+  ButtonRound291.Order               = 42
+  ButtonRound291.Left_               = 223
+  ButtonRound291.Top                 = 385
+  ButtonRound291.Width               = 45
+  ButtonRound291.Height              = 40
+  'ButtonRound291.Visible             = 1
+  ButtonRound291.Active              = 1
+  ButtonRound291.Caption             = @ButtonRound291_Caption
+  ButtonRound291_Caption             = "x"
+  ButtonRound291.OnDownPtr           = 0
+  ButtonRound291.OnClickPtr          = 0
+  ButtonRound291.OnPressPtr          = 0
+
+  ButtonRound292.OwnerScreenAddress  = @Screen4
+  ButtonRound292.Order               = 43
+  ButtonRound292.Left_               = 278
+  ButtonRound292.Top                 = 385
+  ButtonRound292.Width               = 45
+  ButtonRound292.Height              = 40
+  'ButtonRound292.Visible             = 1
+  ButtonRound292.Active              = 1
+  ButtonRound292.Caption             = @ButtonRound292_Caption
+  ButtonRound292_Caption             = "c"
+  ButtonRound292.OnDownPtr           = 0
+  ButtonRound292.OnClickPtr          = 0
+  ButtonRound292.OnPressPtr          = 0
+
+  ButtonRound293.OwnerScreenAddress  = @Screen4
+  ButtonRound293.Order               = 44
+  ButtonRound293.Left_               = 333
+  ButtonRound293.Top                 = 385
+  ButtonRound293.Width               = 45
+  ButtonRound293.Height              = 40
+  'ButtonRound293.Visible             = 1
+  ButtonRound293.Active              = 1
+  ButtonRound293.Caption             = @ButtonRound293_Caption
+  ButtonRound293_Caption             = "v"
+  ButtonRound293.OnDownPtr           = 0
+  ButtonRound293.OnClickPtr          = 0
+  ButtonRound293.OnPressPtr          = 0
+
+  ButtonRound294.OwnerScreenAddress  = @Screen4
+  ButtonRound294.Order               = 45
+  ButtonRound294.Left_               = 388
+  ButtonRound294.Top                 = 385
+  ButtonRound294.Width               = 45
+  ButtonRound294.Height              = 40
+  'ButtonRound294.Visible             = 1
+  ButtonRound294.Active              = 1
+  ButtonRound294.Caption             = @ButtonRound294_Caption
+  ButtonRound294_Caption             = "b"
+  ButtonRound294.OnDownPtr           = 0
+  ButtonRound294.OnClickPtr          = 0
+  ButtonRound294.OnPressPtr          = 0
+
+  ButtonRound295.OwnerScreenAddress  = @Screen4
+  ButtonRound295.Order               = 46
+  ButtonRound295.Left_               = 443
+  ButtonRound295.Top                 = 385
+  ButtonRound295.Width               = 45
+  ButtonRound295.Height              = 40
+  'ButtonRound295.Visible             = 1
+  ButtonRound295.Active              = 1
+  ButtonRound295.Caption             = @ButtonRound295_Caption
+  ButtonRound295_Caption             = "n"
+  ButtonRound295.OnDownPtr           = 0
+  ButtonRound295.OnClickPtr          = 0
+  ButtonRound295.OnPressPtr          = 0
+
+  ButtonRound296.OwnerScreenAddress  = @Screen4
+  ButtonRound296.Order               = 47
+  ButtonRound296.Left_               = 498
+  ButtonRound296.Top                 = 385
+  ButtonRound296.Width               = 45
+  ButtonRound296.Height              = 40
+  'ButtonRound296.Visible             = 1
+  ButtonRound296.Active              = 1
+  ButtonRound296.Caption             = @ButtonRound296_Caption
+  ButtonRound296_Caption             = "µ"
+  ButtonRound296.OnDownPtr           = 0
+  ButtonRound296.OnClickPtr          = 0
+  ButtonRound296.OnPressPtr          = 0
+
+  ButtonRound297.OwnerScreenAddress  = @Screen4
+  ButtonRound297.Order               = 48
+  ButtonRound297.Left_               = 553
+  ButtonRound297.Top                 = 385
+  ButtonRound297.Width               = 45
+  ButtonRound297.Height              = 40
+  'ButtonRound297.Visible             = 1
+  ButtonRound297.Active              = 1
+  ButtonRound297.Caption             = @ButtonRound297_Caption
+  ButtonRound297_Caption             = ","
+  ButtonRound297.OnDownPtr           = 0
+  ButtonRound297.OnClickPtr          = 0
+  ButtonRound297.OnPressPtr          = 0
+
+  ButtonRound298.OwnerScreenAddress  = @Screen4
+  ButtonRound298.Order               = 49
+  ButtonRound298.Left_               = 608
+  ButtonRound298.Top                 = 385
+  ButtonRound298.Width               = 45
+  ButtonRound298.Height              = 40
+  'ButtonRound298.Visible             = 1
+  ButtonRound298.Active              = 1
+  ButtonRound298.Caption             = @ButtonRound298_Caption
+  ButtonRound298_Caption             = "."
+  ButtonRound298.OnDownPtr           = 0
+  ButtonRound298.OnClickPtr          = 0
+  ButtonRound298.OnPressPtr          = 0
+
+  ButtonRound299.OwnerScreenAddress  = @Screen4
+  ButtonRound299.Order               = 50
+  ButtonRound299.Left_               = 663
+  ButtonRound299.Top                 = 385
+  ButtonRound299.Width               = 45
+  ButtonRound299.Height              = 40
+  'ButtonRound299.Visible             = 1
+  ButtonRound299.Active              = 1
+  ButtonRound299.Caption             = @ButtonRound299_Caption
+  ButtonRound299_Caption             = "-"
+  ButtonRound299.OnDownPtr           = 0
+  ButtonRound299.OnClickPtr          = 0
+  ButtonRound299.OnPressPtr          = 0
+
+  ButtonRound300.OwnerScreenAddress  = @Screen4
+  ButtonRound300.Order               = 51
+  ButtonRound300.Left_               = 718
+  ButtonRound300.Top                 = 385
+  ButtonRound300.Width               = 45
+  ButtonRound300.Height              = 40
+  'ButtonRound300.Visible             = 1
+  ButtonRound300.Active              = 1
+  ButtonRound300.Caption             = @ButtonRound300_Caption
+  ButtonRound300_Caption             = "ä"
+  ButtonRound300.OnDownPtr           = 0
+  ButtonRound300.OnClickPtr          = 0
+  ButtonRound300.OnPressPtr          = 0
+
+  ButtonRound301.OwnerScreenAddress  = @Screen4
+  ButtonRound301.Order               = 52
+  ButtonRound301.Left_               = 28
+  ButtonRound301.Top                 = 430
+  ButtonRound301.Width               = 45
+  ButtonRound301.Height              = 40
+  'ButtonRound301.Visible             = 1
+  ButtonRound301.Active              = 0
+  ButtonRound301.Caption             = @ButtonRound301_Caption
+  ButtonRound301_Caption             = ""
+  ButtonRound301.OnDownPtr           = 0
+  ButtonRound301.OnClickPtr          = 0
+  ButtonRound301.OnPressPtr          = 0
+
+  ButtonRound302.OwnerScreenAddress  = @Screen4
+  ButtonRound302.Order               = 53
+  ButtonRound302.Left_               = 83
+  ButtonRound302.Top                 = 430
+  ButtonRound302.Width               = 45
+  ButtonRound302.Height              = 40
+  'ButtonRound302.Visible             = 1
+  ButtonRound302.Active              = 0
+  ButtonRound302.Caption             = @ButtonRound302_Caption
+  ButtonRound302_Caption             = ""
+  ButtonRound302.OnDownPtr           = 0
+  ButtonRound302.OnClickPtr          = 0
+  ButtonRound302.OnPressPtr          = 0
+
+  ButtonRound303.OwnerScreenAddress  = @Screen4
+  ButtonRound303.Order               = 54
+  ButtonRound303.Left_               = 138
+  ButtonRound303.Top                 = 430
+  ButtonRound303.Width               = 45
+  ButtonRound303.Height              = 40
+  'ButtonRound303.Visible             = 1
+  ButtonRound303.Active              = 0
+  ButtonRound303.Caption             = @ButtonRound303_Caption
+  ButtonRound303_Caption             = ""
+  ButtonRound303.OnDownPtr           = 0
+  ButtonRound303.OnClickPtr          = 0
+  ButtonRound303.OnPressPtr          = 0
+
+  ButtonRound304.OwnerScreenAddress  = @Screen4
+  ButtonRound304.Order               = 55
+  ButtonRound304.Left_               = 193
+  ButtonRound304.Top                 = 430
+  ButtonRound304.Width               = 45
+  ButtonRound304.Height              = 40
+  'ButtonRound304.Visible             = 1
+  ButtonRound304.Active              = 0
+  ButtonRound304.Caption             = @ButtonRound304_Caption
+  ButtonRound304_Caption             = ""
+  ButtonRound304.OnDownPtr           = 0
+  ButtonRound304.OnClickPtr          = 0
+  ButtonRound304.OnPressPtr          = 0
+
+  ButtonRound305.OwnerScreenAddress  = @Screen4
+  ButtonRound305.Order               = 56
+  ButtonRound305.Left_               = 248
+  ButtonRound305.Top                 = 430
+  ButtonRound305.Width               = 210
+  ButtonRound305.Height              = 40
+  'ButtonRound305.Visible             = 1
+  ButtonRound305.Active              = 1
+  ButtonRound305.Caption             = @ButtonRound305_Caption
+  ButtonRound305_Caption             = " "
+  ButtonRound305.OnDownPtr           = 0
+  ButtonRound305.OnClickPtr          = 0
+  ButtonRound305.OnPressPtr          = 0
+
+  ButtonRound306.OwnerScreenAddress  = @Screen4
+  ButtonRound306.Order               = 57
+  ButtonRound306.Left_               = 468
+  ButtonRound306.Top                 = 430
+  ButtonRound306.Width               = 45
+  ButtonRound306.Height              = 40
+  'ButtonRound306.Visible             = 1
+  ButtonRound306.Active              = 1
+  ButtonRound306.Caption             = @ButtonRound306_Caption
+  ButtonRound306_Caption             = "AltGr"
+  ButtonRound306.OnDownPtr           = 0
+  ButtonRound306.OnClickPtr          = @execute_AltGr
+  ButtonRound306.OnPressPtr          = 0
+
+  ButtonRound307.OwnerScreenAddress  = @Screen4
+  ButtonRound307.Order               = 58
+  ButtonRound307.Left_               = 523
+  ButtonRound307.Top                 = 430
+  ButtonRound307.Width               = 45
+  ButtonRound307.Height              = 40
+  'ButtonRound307.Visible             = 1
+  ButtonRound307.Active              = 0
+  ButtonRound307.Caption             = @ButtonRound307_Caption
+  ButtonRound307_Caption             = ""
+  ButtonRound307.OnDownPtr           = 0
+  ButtonRound307.OnClickPtr          = 0
+  ButtonRound307.OnPressPtr          = 0
+
+  ButtonRound308.OwnerScreenAddress  = @Screen4
+  ButtonRound308.Order               = 59
+  ButtonRound308.Left_               = 578
+  ButtonRound308.Top                 = 430
+  ButtonRound308.Width               = 45
+  ButtonRound308.Height              = 40
+  'ButtonRound308.Visible             = 1
+  ButtonRound308.Active              = 1
+  ButtonRound308.Caption             = @ButtonRound308_Caption
+  ButtonRound308_Caption             = ""
+  ButtonRound308.OnDownPtr           = 0
+  ButtonRound308.OnClickPtr          = 0
+  ButtonRound308.OnPressPtr          = 0
+
+  ButtonRound309.OwnerScreenAddress  = @Screen4
+  ButtonRound309.Order               = 60
+  ButtonRound309.Left_               = 738
+  ButtonRound309.Top                 = 430
+  ButtonRound309.Width               = 25
+  ButtonRound309.Height              = 40
+  'ButtonRound309.Visible             = 1
+  ButtonRound309.Active              = 1
+  ButtonRound309.Caption             = @ButtonRound309_Caption
+  ButtonRound309_Caption             = "dn"
+  ButtonRound309.OnDownPtr           = 0
+  ButtonRound309.OnClickPtr          = 0
+  ButtonRound309.OnPressPtr          = 66
+
+  ButtonRound310.OwnerScreenAddress  = @Screen4
+  ButtonRound310.Order               = 61
+  ButtonRound310.Left_               = 703
+  ButtonRound310.Top                 = 430
+  ButtonRound310.Width               = 25
+  ButtonRound310.Height              = 40
+  'ButtonRound310.Visible             = 1
+  ButtonRound310.Active              = 1
+  ButtonRound310.Caption             = @ButtonRound310_Caption
+  ButtonRound310_Caption             = "up"
+  ButtonRound310.OnDownPtr           = 0
+  ButtonRound310.OnClickPtr          = 0
+  ButtonRound310.OnPressPtr          = 65
+
+  ButtonRound311.OwnerScreenAddress  = @Screen4
+  ButtonRound311.Order               = 62
+  ButtonRound311.Left_               = 668
+  ButtonRound311.Top                 = 430
+  ButtonRound311.Width               = 25
+  ButtonRound311.Height              = 40
+  'ButtonRound311.Visible             = 1
+  ButtonRound311.Active              = 1
+  ButtonRound311.Caption             = @ButtonRound311_Caption
+  ButtonRound311_Caption             = ">"
+  ButtonRound311.OnDownPtr           = 0
+  ButtonRound311.OnClickPtr          = 0
+  ButtonRound311.OnPressPtr          = 67
+
+  ButtonRound312.OwnerScreenAddress  = @Screen4
+  ButtonRound312.Order               = 63
+  ButtonRound312.Left_               = 633
+  ButtonRound312.Top                 = 430
+  ButtonRound312.Width               = 25
+  ButtonRound312.Height              = 40
+  'ButtonRound312.Visible             = 1
+  ButtonRound312.Active              = 1
+  ButtonRound312.Caption             = @ButtonRound312_Caption
+  ButtonRound312_Caption             = "<"
+  ButtonRound312.OnDownPtr           = 0
+  ButtonRound312.OnClickPtr          = 0
+  ButtonRound312.OnPressPtr          = 68
+end sub
+
+sub function IsInsideObject (dim X, Y as word, dim Left_, Top, Width, Height as word) as byte ' static
+    if ( (Left_<= X) and (Left_+ Width - 1 >= X) and
+       (Top <= Y)  and (Top + Height - 1 >= Y) ) then
+       Result = 1
+    else
+        Result = 0
+    end if
+end sub
+
+sub function GetRoundButton (dim index as byte) as ^TButton_Round ' static
+dim objPtr as ^ const code ^TButton_Round   volatile
+
+    objPtr = CurrentScreen^.Buttons_Round + index
+    Result = objPtr^
+end sub
+
+
+
+sub procedure DrawRoundButton(dim Around_button as ^TButton_Round)
+dim ALeft, ATop as word  volatile
+
+  'if (Around_button^.Visible <> 0) then
+    if (object_pressed = 1) then
+      object_pressed = 0
+      TFT_Set_Brush(1, CurrentScreen^.Press_Color, CurrentScreen^.Gradient, CurrentScreen^.Gradient_Orientation,
+                    CurrentScreen^.Gradient_End_Color, CurrentScreen^.Gradient_Start_Color)
+    else
+      TFT_Set_Brush(1, CurrentScreen^.Button_Color, CurrentScreen^.Gradient, CurrentScreen^.Gradient_Orientation,
+                    CurrentScreen^.Gradient_Start_Color, CurrentScreen^.Gradient_End_Color)
+    end if
+    TFT_Set_Pen(CurrentScreen^.Pen_Color, CurrentScreen^.Pen_Width)
+    TFT_Rectangle_Round_Edges(Around_button^.Left_ + 1, Around_button^.Top + 1,
+                              Around_button^.Left_ + Around_button^.Width - 2,
+                              Around_button^.Top + Around_button^.Height - 2, CurrentScreen^.Corner_Radius)
+    TFT_Set_Font(CurrentScreen^.FontName, CurrentScreen^.Font_Color, FO_HORIZONTAL)
+    TFT_Write_Text_Return_Pos(Around_button^.Caption, Around_button^.Left_, Around_button^.Top)
+    if (CurrentScreen^.TextAlign = _taLeft) then
+      ALeft = Around_button^.Left_ + 4
+      else if (CurrentScreen^.TextAlign = _taCenter) then
+        ALeft = Around_button^.Left_ + (Around_button^.Width - caption_length) div 2
+        else if (CurrentScreen^.TextAlign = _taRight) then
+          ALeft = Around_button^.Left_ + Around_button^.Width - caption_length - 4
+        end if
+      end if
+    end if
+
+    if (CurrentScreen^.TextAlignVertical = _tavTop) then
+      ATop = Around_button^.Top + 3
+      else if (CurrentScreen^.TextAlignVertical = _tavMiddle) then
+        ATop = Around_button^.Top + (Around_button^.Height - caption_height) div 2
+        else if (CurrentScreen^.TextAlignVertical = _tavBottom) then
+          ATop = Around_button^.Top + Around_button^.Height - caption_height - 4
+        end if
+      end if
+    end if
+
+    TFT_Write_Text(Around_button^.Caption, ALeft, ATop)
+    set_font  ' TFT_Backcol=0
+  'end if
+end sub
+
+sub procedure DrawScreen(dim aScreen as ^TScreen)
+dim order as word  volatile
+dim round_button_idx as byte  volatile
+
+    local_round_button as ^TButton_Round
+    object_pressed = 0
+    order = 0
+    round_button_idx = 0
+    CurrentScreen = aScreen
+    if (display_width <> CurrentScreen^.Width) or (display_height <> CurrentScreen^.Height) then
+       tft_clear_screen(CurrentScreen^.Color)
+       display_width = CurrentScreen^.Width
+       display_height = CurrentScreen^.Height
+    else
+        tft_clear_screen(CurrentScreen^.Color)
+    end if
+    while (order < CurrentScreen^.ObjectsCount)
+          if (round_button_idx < CurrentScreen^.Buttons_RoundCount) then
+             local_round_button = GetRoundButton(round_button_idx)
+             if (order = local_round_button^.Order) then
+                Inc(round_button_idx)
+                Inc(order)
+                DrawRoundButton(local_round_button)
+             end if
+          end if
+    wend
+end sub
+
+sub procedure Get_Object(dim X as word, dim Y as word)
+dim counter as integer  volatile
+
+    round_button_order  = -1
+    '  Buttons with Round Edges
+    counter = CurrentScreen^.Buttons_RoundCount
+    for _object_count = 0 to counter - 1
+        local_round_button = GetRoundButton(_object_count)
+        if (local_round_button^.Active <> 0) then
+           if IsInsideObject(X, Y, local_round_button^.Left_, local_round_button^.Top,
+              local_round_button^.Width, local_round_button^.Height) = 1 then
+              round_button_order = local_round_button^.Order
+              exec_round_button = local_round_button
+           end if
+        end if
+    next _object_count
+
+    _object_count = -1
+    if (round_button_order >  _object_count ) then
+       _object_count = round_button_order
+    end if
+end sub
+
+sub procedure Process_TP_Up(dim X as word, dim Y as word) ' static
+    select case PressedObjectType
+    ' Round Button
+      case 1
+           if (PressedObject <> 0) then
+              exec_round_button = ^TButton_Round(PressedObject)
+              if (exec_round_button^.OwnerScreenAddress = ^byte(CurrentScreen)) then
+                 DrawRoundButton(exec_round_button)
+              end if
+           end if
+    end select
+    Get_Object(X, Y)
+    if (_object_count <> -1) then
+       ' Buttons with Round Edges
+       if (_object_count = round_button_order) then
+          if (exec_round_button^.Active <> 0) then
+             if PressedObject = TBytePtr(exec_round_button) then
+                if (exec_round_button^.OnClickPtr <> 0) then
+                   exec_round_button^.OnClickPtr^()
+                end if
+             end if
+             PressedObject = 0
+             PressedObjectType = -1
+             key_released=_object_count   key_newest=0   key_ctrl=0
+             exit
+          end if
+       end if
+    end if
+    PressedObject = 0
+    PressedObjectType = -1
+end sub
+
+sub procedure execute_shift
+    if ashift=0 then
+       ashift=1
+       InitializeObjects()
+       display_width = Screen2.Width
+       display_height = Screen2.Height
+       DrawScreen(@Screen2)
+       InitializeTouchPanel()
+    else
+        Start_TP
+    end if
+end sub
+
+sub procedure execute_AltGr
+    if aaltgr=0 then
+       aaltgr=1
+       InitializeObjects()
+       display_width = Screen4.Width
+       display_height = Screen4.Height
+       DrawScreen(@Screen4)
+       InitializeTouchPanel()
+    else
+        Start_TP
+    end if
+end sub
+
+sub procedure execute_ctrl
+    if actrl=0 then
+       actrl=1
+       InitializeObjects()
+       display_width = Screen1.Width
+       display_height = Screen1.Height
+       Screen1.Color=0x5AEB
+       DrawScreen(@Screen1)
+       InitializeTouchPanel()
+    end if
+end sub
+
+sub procedure execute_fn
+    if afn=0 then
+       afn=1
+       InitializeObjects()
+       display_width = Screen1.Width
+       display_height = Screen1.Height
+       DrawScreen(@Screen1)
+       InitializeTouchPanel()
+    else
+        Start_TP
+    end if
+end sub
+
+sub procedure extra_off
+    schar=0   ashift=0   afn=0    aaltgr=0   actrl=0
+    Screen1.Color = 0x1310
+    DrawScreen(@Screen1)
+end sub
+
+sub procedure Process_TP_Down(dim X as word, dim Y as word) ' static
+    object_pressed      = 0
+    exec_round_button   = 0
+    Get_Object(X, Y)
+    if (_object_count <> -1) then
+       if (_object_count = round_button_order) then
+          if (exec_round_button^.Active <> 0) then
+             object_pressed = 1
+             DrawRoundButton(exec_round_button)
+             PressedObject = TBytePtr(exec_round_button)
+             PressedObjectType = 1
+             key_pressed=_object_count  key_newest=key_pressed
+             if (exec_round_button^.OnDownPtr <> 0) then
+                exec_round_button^.OnDownPtr^()
+                exit
+             end if
+             if (exec_round_button^.OnClickPtr = 0) then
+                if (exec_round_button^.OnPressPtr = 0) then
+                   schar=byte(exec_round_button^.Caption^)
+                   if actrl then
+                      if (schar>96) and (schar<123) then
+                         put_char_in_buffer(schar -96, konsole_uart)
+                         extra_off
+                      end if
+                   else
+                       if schar>0 then
+                          put_char_in_buffer(schar, konsole_uart)
+                          'if ashift or aaltgr then
+'                             extra_off
+'                          end if
+                          if aaltgr then
+                             extra_off
+                          end if
+                       end if
+                   end if
+                else
+                    schar=byte(exec_round_button^.OnPressPtr)
+                    if schar>200 then
+                       fn_key(schar-143, konsole_uart)
+                       put_char_in_buffer(126, konsole_uart)
+                       afn=0
+                       InitializeObjects()
+                       extra_off
+                    else
+                        if (schar>48) and (schar<127) then
+                           esc_sequence(schar, konsole_uart)
+                           key_ctrl=1
+                        else
+                            if schar>0 then
+                               put_char_in_buffer(schar, konsole_uart)
+                               if aaltgr then
+                                  extra_off
+                               end if
+                            end if
+                        end if
+                    end if
+                    schar=0
+                end if
+             end if
+          end if
+       end if
+    end if
+end sub
+
+sub procedure Check_TP()
+    if T_IRRPT=0 then
+       if PenDown = 0 then
+          PenDown = 1
+          x_raw=0  y_raw=0  xalt=1  yalt=1
+          while (xalt<>x_raw) or (yalt<>y_raw)
+                xalt=x_raw    yalt=y_raw
+                get_coord_raw
+          wend
+          Xcoord=word(float(x_raw) * X_factor) + x_offset
+          Ycoord=word(float(y_raw) * Y_factor) + y_offset
+          if Xcoord >= display_width  then  Xcoord = display_width  -1  end if
+          if Ycoord >= display_height then  Ycoord = display_height -1  end if
+          Process_TP_Down(Xcoord, Ycoord)
+       end if
+    else
+        if PenDown = 1 then
+           PenDown = 0
+           Process_TP_Up(Xcoord, Ycoord)
+        end if
+    end if
+end sub
+
+sub procedure Start_TP() 
+    ashift=0   afn=0    aaltgr=0   actrl=0
+    InitializeObjects()
+    display_width = Screen1.Width
+    display_height = Screen1.Height
+    DrawScreen(@Screen1)
+    InitializeTouchPanel()
+end sub
+
+end.
