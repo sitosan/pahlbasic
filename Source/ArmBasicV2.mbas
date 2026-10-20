@@ -23,6 +23,7 @@ include "ser_flash"
 include "fonts"
 include __Lib_Stdint
 
+
 #ifdef 407ZG then                                                              ' Board mit STM32F407ZG
 include "OSK_driver2.mbas"
 include "MP3_Driver.mbas"
@@ -859,7 +860,7 @@ const auchCRCLo as char[256] = (0x00, 0xC0, 0xC1, 0x01, 0xC3, 0x03, 0x02, 0xC2, 
   errorstr as errorelement[maxerror +1] = ("ready", "illegal direct", "syntax error", "expected " +chr(34)+ "=,() or #", "expected 'to'", "next without for", "return without gosub", "expected '='", "line number??", "stack error", "dcf77 or gps ctrl", "not in prog mode", "can't continue", "bad argument", "out of memory", "loop without do", "no program", "no ext. eeprom", "file not found", "hardware", "file too big", "index!", "adress error", "file already exists", "data type mismatch", "file not open", "no read file", "no write file", "file end reached", "no Data File", "filehandler??", "soft break", "user break")
                  '                            0            1                 2               3                                4                   5                    6                     7               8               9                10                   11                12               13                 14             15                16              17                18             19             20          21           22                23                      24                25                26              27                28                 29               30             31            32
 'keywords:                                                                      -----------------------------------------------------------------------
-  keyword  as keyelement[130] = ("str$","dow$","!!ext1!","!!ext2!","!!ext3!","!!ext4!","get ","goto ","gosub ","if ","input ","lcd ","let ","if ","text ","next ","poke ","print ","read ","exit","plot ","ile ","select ","endif","else","case ","return ","celse","data ","wh","locate ","sound ","inc ","dec ","draw ","calc","fix$","clock","keypad ","touch ","selend","put ","on ","end","write ","wend","do","for ","until ","string","hex$","mpeek","date","chr$"," in "," mod ","=",">=","<=","<>"," and "," or "," xor ","<<",">>","val","bin$","A$","B$","C$","D$","E$","F$","G$","H$","color","pwm3","attack","speed","pwm4","tremolo","day","month","year","dac","err","font","stack","erl","dataptr","decay","pwm1","pwm2","dow","fnvar","tempo","ad1","ad2","ad3","time","226","rand","relay","sustain","hour","volume","diginp","release","vibrato","milli","buf","ad4","second","minute","norm","sign","abs","243","atn","not","log","247","sin","cos","tan","sqr","high","low","peek","int")   ' startet mit Zeichen 126
+  keyword  as keyelement[130] = ("str$","dow$","!!ext1!","!!ext2!","!!ext3!","!!ext4!","get ","goto ","gosub ","if ","input ","lcd ","let ","if ","text ","next ","poke ","print ","read ","exit","plot ","ile ","select ","endif","else","case ","return ","celse","data ","wh","locate ","sound ","inc ","dec ","draw ","calc","fix$","clock","keypad ","touch ","selend","put ","on ","end","write ","wend","do","for ","until ","string","hex$","mpeek","date","chr$"," in "," mod ","=",">=","<=","<>"," and "," or "," xor ","<<",">>","val","bin$","A$","B$","C$","D$","E$","F$","G$","H$","color","pwm3","attack","speed","pwm4","tremolo","day","month","year","dac","err","font","stack","erl","dataptr","decay","pwm1","pwm2","dow","fnvar","tempo","ad1","ad2","ad3","time","offset","rand","relay","sustain","hour","volume","diginp","release","vibrato","milli","buf","ad4","second","minute","norm","sign","abs","243","atn","not","log","247","sin","cos","tan","sqr","high","low","peek","int")   ' startet mit Zeichen 126
   key2word as key2element[42] = ("0","1","2","del ","cont","morse ","convert ", "baud ", "midi ", "debug ", "dump ", "load ", "save ", "13", "close ", "wait ", "clear ", "run ", "list ", "rem ", "user ", "restore ","cls ", "23", "rename ", "set ", "reset ", "toggle ", "impuls ", "config ", "sleep ", "spi ", "md ", "cd ", "rd ", "format ", "dir ", "new", "erase ", "39", "rlist ", "rrun ")  ' mit Extender 128  startet mit Zeichen 0 bis 96
   Key3word as key2element[32] = ("", " : ", " then ", "fn1", "fn2", "fn3", "fn4", "fn5", "asc", "len", "epoch", " ", "lcase ", "ucase ", " mul ", " exp ", "0x", "sensor$", "fn ", "prog$", "fs ", " div ", "->", "mid ", "fr ", "T", "fkey$", "stamp$", "f$ ", "result$", "path$", "com ")   'ohne Extender startet mit Zeichen 0 bis Zeichen 31
   key4word as key2element[41] = ("0", "1", "2", "3", "kill ", "rcall ", "rstart ", "fkey", "incr ", "decr ", "deffn ", "mean ", "array ", "max ", "min ", "sort ", "gps ", "resume ", "start ", "defpr ", "receive ", "break ", "record ", "play ", "insert ", "stamp ", "inpt ", "i2c ", "28", "led ", "call ", "i2c2 ","32","33","34","35","36","sub ","usb ","'", "40")   ' mit Extender 129  startet mit Zeichen 0 bis 96
@@ -914,7 +915,7 @@ dim MP3_RST             as sbit at GPIOD_ODR.B8
     MP3_CS              as sbit at GPIOD_ODR.B3
     BSYNC               as sbit at GPIOD_ODR.B7
     DREQ                as sbit at GPIOD_IDR.B4
-    MP3_Flag            as word
+    sound_card          as word
 #endif
 
 'SD_Card                                                                        --------------405RG--------------------------------------------
@@ -1053,8 +1054,8 @@ DIM
 dim MP3_RST             as sbit at GPIOA_ODR.9
     MP3_CS              as sbit at GPIOA_ODR.10
     BSYNC               as sbit at GPIOA_ODR.8
-    DREQ                as sbit at GPIOC_IDR.8
-    MP3_Flag            as word
+    DREQ                as sbit at GPIOC_IDR.9
+    Soundcard           as word
 
 'SD_Card                                                                        ---------------407Mini-----------------------------------------
 dim totalClusts,
@@ -1134,7 +1135,7 @@ dim MP3_RST             as sbit at GPIOA_ODR.9
     BSYNC               as sbit at GPIOA_ODR.8
     MP3_CS              as sbit at GPIOA_ODR.10
     DREQ                as sbit at GPIOC_IDR.13
-    MP3_Flag            as word
+    soundcard           as word
 
 'SD_Card                                                                        --------------407ZG--------------------------------------------
 dim totalClusts,
@@ -1216,7 +1217,7 @@ DIM
 '    MP3_CS              as sbit at GPIOA_ODR.B10
 '    BSYNC               as sbit at GPIOA_ODR.B8
 '    DREQ                as sbit at GPIOC_IDR.B4
-    MP3_Flag            as word
+    soundcard            as word
 
 'SD_Card                                                                        --------------411----------------------------------------------
 dim totalClusts,
@@ -1349,6 +1350,7 @@ DIM
 DIM 
     flash_size as longword                                                     ' Grösse des FlashROMs
     sf_prgz    as word                                                         ' Anzahl Dateien im ser. Flash
+    eeprom     as word
     
 'Soundvariablen                                                                 -----------------Alle------------------------------------------
 DIM
@@ -1372,6 +1374,7 @@ DIM
     v_modulator    as float[voicemax]                                          ' Lautstärke für einzelne Stimme
     s_modulator    as float[voicemax]                                          ' ADSR-Modulator
     midi_modulator as float[voicemax]                                          ' Midi-Modulator ADSR-Lautstärkeverlauf je Stimme
+    MIDI_offset    as integer                                                  ' MIDI-Notenversatz
     midi_device    as word                                                     ' MIDI-Ausgabegerät
     channel_volume as float[16]                                                ' MIDI-Kanal-Lautstärken von allen 16 MIDI-Kanälen
     channel_expr   as float[16]                                                ' MIDI-Kanal-Expressions-Lautstärken von allen 16 MIDI-Kanälen
@@ -1655,6 +1658,7 @@ DIM
   osk_invisible       as word
 #endif
 #ifdef VG then
+
 ' OSK
 DIM
   osk_started         as word
@@ -2141,7 +2145,7 @@ dim portpointerM, portpointerS, portpointerO  as ^longword volatile            '
     portpointerM^ = portpointerM^ and (not longword(0x03 << (pin_no*2)))       ' PinMode löschen
     portpointerM^ = portpointerM^ or longword((pin_mode and 3) << (pin_no*2))  ' PinMode setzen
     if pin_mode=1 then                                                         ' Output-Mode?
-       setbit(portpointerO^, pin_no)                                           ' Gegentakt-Ausgang
+       setbit(portpointerO^ , pin_no)                                          ' Gegentakt-Ausgang
        portpointerS^ = portpointerS^ and (not longword(0x03 << (pin_no*2)))    ' PinSpeed löschen
        portpointerS^ = portpointerS^  or      longword(0x03 << (pin_no*2))     ' PinSpeed max.
     end if
@@ -2308,7 +2312,7 @@ sub procedure fn_key(dim funckey as byte, dim intrfce as word)                 '
       case 60   put_char_in_buffer(51, intrfce)  '3                            ' Fkey 3
       case 61   put_char_in_buffer(52, intrfce)  '4                            ' Fkey 4
       case 62   put_char_in_buffer(53, intrfce)  '5                            ' Fkey 5
-      case 63   put_char_in_buffer(55, intrfce)  '7                            ' Fkey 6
+      case 63   put_char_in_buffer(55, intrfce)  '7                            ' Fkey 6  Fehler in TeraTerm V4 ???? macht diesen select crap nötig
       case 64   put_char_in_buffer(56, intrfce)  '8                            ' Fkey 7
       case 65   put_char_in_buffer(57, intrfce)  '9                            ' Fkey 8
       case 66   put_char_in_buffer(48, intrfce)  '0                            ' Fkey 9
@@ -2404,7 +2408,7 @@ dim
               end select
            else
                select case extra_key
-                 case 0x02, 0x20  output = Keyboard_ShiftKey_us[key_newest]    ' mit Shift (german keys)
+                 case 0x02, 0x20  output = Keyboard_ShiftKey_us[key_newest]    ' mit Shift (us keys)
                  case 0x01, 0x10  output = Keyboard_CtrlKey_us[key_newest]     ' mit Ctrl      "
                  case 0x40        output = Keyboard_AltgrKey_us[key_newest]    ' mit AltGr     "
                  case 0x04        output = Keyboard_AltKey_us[key_newest]      ' mit Alt       "
@@ -2635,7 +2639,7 @@ dim x, y, comp, midi_key               as  word     volatile
                                 uart(127)                                      ' const 127 (Orgel)
                             end if
                          else                                                  ' intern play
-                             if (midi_key>12) and (midi_key<107) then          ' Notenbereich des DDS-Generators
+                             if (midi_key>11) and (midi_key<108) then          ' Notenbereich des DDS-Generators
                                 voice_key[tabl_pos]=play_note(midi_key,600000,1.0)   ' play note on
                              end if
                          end if
@@ -3022,20 +3026,28 @@ sub procedure x4_service() iv IVT_INT_EXTI4 ics ICS_AUTO                       '
 end sub
 #endif
 
-sub procedure x15_10_service() iv IVT_INT_EXTI15_10 ics ICS_AUTO               ' EXT-Int (Eingang 11-16 - Interrupt)  Touch-Eingang=16
-    #ifndef 411 then
-      #ifndef WeAct then
-        #ifndef PyBoard then
-    if EXTI_PR.13 = 1 then                                                     ' Interrupt 13?
-       EXTI_PR.13 = 1
-       if DREQ=1 then
+sub procedure x9_5_service() iv IVT_INT_EXTI9_5 ics ICS_AUTO                   ' EXT-Int (Eingang 6-10 - Interrupt)  DREQ-Eingang (MP3)
+    #ifdef 407mini then
+    if EXTI_PR.9 = 1 then                                                      ' Interrupt 9?
+       EXTI_PR.9 = 1
+       if DREQ=1 then                                                          ' nötig?
        'hier VS1053 Software einfügen
        end if
        exit
     end if
-        #endif
-      #endif
     #endif
+    #ifdef VG then
+    if EXTI_PR.7 = 1 then                                                      ' Interrupt 9?
+       EXTI_PR.7 = 1
+       if DREQ=1 then                                                          ' nötig?
+       'hier VS1053 Software einfügen
+       end if
+       exit
+    end if
+    #endif
+end sub
+
+sub procedure x15_10_service() iv IVT_INT_EXTI15_10 ics ICS_AUTO               ' EXT-Int (Eingang 11-16 - Interrupt)  Touch-Eingang=16
     if EXTI_PR.15 = 1 then                                                     ' Interrupt 15?  TOUCH
        EXTI_PR.15 = 1
        #ifdef 407ZG then
@@ -3722,12 +3734,6 @@ sub procedure Timer14_interrupt() iv IVT_INT_TIM8_TRG_COM_TIM14 ics ICS_AUTO   '
     'if UIF_TIM14_SR_bit=1 then
     UIF_TIM14_SR_bit=0
     'end if
-    'inc(Tim14_Ticks)
-'    if Tim14_Ticks=Tim14_Max then
-'       NVIC_IntDisable(IVT_INT_TIM8_TRG_COM_TIM14)
-'       Check_TP()
-'       EXTI_IMR.15 = 1
-'    end if
 end sub
 #endif
 
@@ -3871,23 +3877,6 @@ sub procedure receive_midi() iv IVT_INT_USART2  ics ICS_AUTO                   '
     end if
 end sub
 #endif
-
-'#ifdef 411 then
-'sub procedure receive_midi() iv IVT_INT_USART2  ics ICS_AUTO                   ' MIDI Interrupt Service / com2   -USART2
-'    mvar2 = USART2_DR
-'    stat2 = USART2_SR                                                          ' nach Überlauf muss Statusregister gelesen werden
-'    recstr2[ser2_zeiger] = mvar2
-'    if ser2_zeiger < fifo2 then  inc(ser2_zeiger)  end if
-'    if konsole_uart=2 then                                                     ' Konsole auf com2?
-'       mvar = mvar2
-'       ser_zeiger = ser2_zeiger
-'       if mvar=3 then  perror = maxerror  get_one_midi_byte end if
-'    end if
-'    if onbuf2=1 then                                                           ' on buf2 ?
-'       int_helper(10)                                                          ' Interrupt-Nr. 10
-'    end if
-'end sub
-'#endif
 
 #ifndef 411 then
 sub procedure receive_gps() iv IVT_INT_USART6  ics ICS_AUTO                    ' GPS Interrupt Service / com3   -UART6
@@ -4899,8 +4888,8 @@ end sub
 sub procedure newline                                                          ' sende Newline  (wird gelistet)
     select case uart_nr
       case 1,2,3,4,5,6
-           'uart(13)  uart(10)
-           print_chr(13)    print_chr(10)
+           'uart(13)            uart(10)
+           print_chr(13)       print_chr(10)
       case 10,11,12,13,14,15,16,17,18,19,20
            sf_print_chr(13)    sf_print_chr(10)
       case 7,8,9
@@ -6276,6 +6265,7 @@ dim nns       as string[10]    volatile
            uwtnl("sys(126):  Anzahl Modbus-Bytes")
            uwtnl("sys(128):  Anzahl der Zeichen im Empfangspuffer der Matrix-Tastatur")
            uwtnl("sys(129):  Anzahl Dateislots auf dem Flash-Chip")
+           uwtnl("sys(130):  'Flash'-Chip: 0=Flash, 1=EEPROM")
            uwtnl("sys(131):  Matrix aktiv=true, inaktiv=0")
            uwtnl("sys(132):  Matrix-Nummer")
            uwtnl("sys(133):  Matrix-Keyboard-Modus: 0=Computer-Tastatur, 1=Klaviatur")
@@ -6619,7 +6609,7 @@ sub function wait_key2 as byte
     clear_com0_pointer
     while  ser_zeiger=0  IWDG_KR=0xAAAA  wend
     'if osk_started then
-'       while T_IRRPT=0   wend
+'       while T_IRRPT=0   wend                                                  ' auf Stiftabheben warten
 '    end if
     cwt("           ")   con(13)
     result=mvar  clear_com0_pointer
@@ -6911,13 +6901,13 @@ end sub
    end sub
 
    sub procedure Parallel_Set_Address_SSD1963(dim x1 as word y1 as word x2 as word y2 as word)    ' F405RG_Firmware auf 407VG-Board
-       Parallel_Set_Index(0x2a)             ' SET column address
+       Parallel_Set_Index(0x2a)                                                ' SET column address
        Parallel_Write_Command(x1 >> 8)
        Parallel_Write_Command(x1)
        Parallel_Write_Command(x2 >> 8)
        Parallel_Write_Command(x2)
        'prn(x1)  prn(x2)
-       Parallel_Set_Index(0x2b)             ' SET page address
+       Parallel_Set_Index(0x2b)                                                ' SET page address
        Parallel_Write_Command(y1 >> 8)
        Parallel_Write_Command(y1)
        Parallel_Write_Command(y2 >> 8)
@@ -6927,14 +6917,14 @@ end sub
    end sub
 
    sub procedure Parallel_Set_Address_SSD1963_2(dim x1 as word y1 as word x2 as word y2 as word)    ' F405RG_Firmware auf 407VG-Board
-       Parallel_Set_Index(0x2a)             ' SET column address
+       Parallel_Set_Index(0x2a)                                                ' SET column address
        Parallel_Write_Command(x1 >> 8)
        Parallel_Write_Command(x1)
        Parallel_Write_Command(x2 >> 8)
        Parallel_Write_Command(x2)
        if TFT_X<x1 then TFT_X=x1 end if
        'prn(x1)  prn(x2)
-       Parallel_Set_Index(0x2b)             ' SET page address
+       Parallel_Set_Index(0x2b)                                                ' SET page address
        Parallel_Write_Command(y1 >> 8)
        Parallel_Write_Command(y1)
        Parallel_Write_Command(y2 >> 8)
@@ -6944,13 +6934,13 @@ end sub
    end sub
 
    sub procedure Parallel_Set_Address3_SSD1963(dim x1 as word y1 as word x2 as word y2 as word)   ' F405RG_Firmware auf 407VG-Board
-       Parallel_Set_Index(0x2a)             ' SET column address
+       Parallel_Set_Index(0x2a)                                                ' SET column address
        Parallel_Write_Command(x1 >> 8)
        Parallel_Write_Command(x1)
        Parallel_Write_Command(x2 >> 8)
        Parallel_Write_Command(x2)
        'prn(x1)  prn(x2)
-       Parallel_Set_Index(0x2b)             ' SET page address
+       Parallel_Set_Index(0x2b)                                                ' SET page address
        Parallel_Write_Command(y1 >> 8)
        Parallel_Write_Command(y1)
        Parallel_Write_Command(y2 >> 8)
@@ -7087,13 +7077,13 @@ const
 end sub
 
 sub procedure Parallel_Set_Address_SSD1963(dim x1 as word y1 as word x2 as word y2 as word)  ' F407ZG
-    Parallel_Set_Index(0x2a)             ' SET column address
+    Parallel_Set_Index(0x2a)                                                   ' SET column address
     Parallel_Write_Command(x1 >> 8)
     Parallel_Write_Command(x1)
     Parallel_Write_Command(x2 >> 8)
     Parallel_Write_Command(x2)
     'prn(x1)  prn(x2)
-    Parallel_Set_Index(0x2b)             ' SET page address
+    Parallel_Set_Index(0x2b)                                                   ' SET page address
     Parallel_Write_Command(y1 >> 8)
     Parallel_Write_Command(y1)
     Parallel_Write_Command(y2 >> 8)
@@ -7103,14 +7093,14 @@ sub procedure Parallel_Set_Address_SSD1963(dim x1 as word y1 as word x2 as word 
 end sub
 
 sub procedure Parallel_Set_Address_SSD1963_2(dim x1 as word y1 as word x2 as word y2 as word)   ' F407ZG
-    Parallel_Set_Index(0x2a)             ' SET column address
+    Parallel_Set_Index(0x2a)                                                   ' SET column address
     Parallel_Write_Command(x1 >> 8)
     Parallel_Write_Command(x1)
     Parallel_Write_Command(x2 >> 8)
     Parallel_Write_Command(x2)
     if TFT_X<x1 then TFT_X=x1 end if
     'prn(x1)  prn(x2)
-    Parallel_Set_Index(0x2b)             ' SET page address
+    Parallel_Set_Index(0x2b)                                                   ' SET page address
     Parallel_Write_Command(y1 >> 8)
     Parallel_Write_Command(y1)
     Parallel_Write_Command(y2 >> 8)
@@ -7120,13 +7110,13 @@ sub procedure Parallel_Set_Address_SSD1963_2(dim x1 as word y1 as word x2 as wor
 end sub
 
 sub procedure Parallel_Set_Address3_SSD1963(dim x1 as word y1 as word x2 as word y2 as word)    ' F407ZG
-    Parallel_Set_Index(0x2a)             ' SET column address
+    Parallel_Set_Index(0x2a)                                                   ' SET column address
     Parallel_Write_Command(x1 >> 8)
     Parallel_Write_Command(x1)
     Parallel_Write_Command(x2 >> 8)
     Parallel_Write_Command(x2)
     'prn(x1)  prn(x2)
-    Parallel_Set_Index(0x2b)             ' SET page address
+    Parallel_Set_Index(0x2b)                                                   ' SET page address
     Parallel_Write_Command(y1 >> 8)
     Parallel_Write_Command(y1)
     Parallel_Write_Command(y2 >> 8)
@@ -7142,9 +7132,9 @@ const
     RS_Hi=(1<<12)
     WR_Lo_RS_Hi=(WR_Lo or RS_Hi)
       
-    GPIOD_BSRR=WR_Lo_RS_Hi                                                     'TFT_WR=0  TFT_RS=1
+    GPIOD_BSRR=WR_Lo_RS_Hi                                                     ' TFT_WR=0  TFT_RS=1
     GPIOF_ODR = wdata
-    GPIOD_BSRR=WR_Hi                                                           'TFT_WR=1
+    GPIOD_BSRR=WR_Hi                                                           ' TFT_WR=1
 end sub
 
 sub function Parallel_Read_Data16() as word                                    ' F407ZG
@@ -8455,7 +8445,7 @@ end select
 TFT_CS = 1
 end sub
 
-sub procedure draw_button(dim x, y, z as longword)
+sub procedure draw_button(dim x, y, z as longword)                             ' from PIC32
     if use_palette then
        TFT_Set_Pen(0, 2)
        TFT_Set_Brush(1, z, 0, 0, 0, 0)
@@ -8467,7 +8457,7 @@ sub procedure draw_button(dim x, y, z as longword)
     end if
 end sub
 
-sub function four_buttons(dim modus as longword) as longword
+sub function four_buttons(dim modus as longword) as longword                   ' from PIC32
 dim cl1, cl2, cl3, cl4                                             as longword volatile
 dim button_red, button_blue, button_silver, button_white, test_bit as word     volatile
 
@@ -8645,7 +8635,7 @@ dim button_red, button_blue, button_silver, button_white, test_bit as word     v
       TFT_Fill_Screen(tft_backcol)  TFT_zeile=0  TFT_spalte=0
 end sub
 
-sub procedure ok_button()
+sub procedure ok_button()                                                      ' from PIC32
 dim button_white as word volatile
 
     if use_palette then  button_white=9 else  button_white = cl_palette[9] end if
@@ -8659,7 +8649,7 @@ dim button_white as word volatile
     TFT_Fill_Screen(tft_backcol)
 end sub
 
-sub procedure message_box()
+sub procedure message_box()                                                    ' from PIC32
 dim button_white as word volatile
 
     if use_palette  then  button_white=9  else  button_white = cl_palette[9]  end if
@@ -9479,6 +9469,15 @@ sub procedure init_gpios()
     GPIO_Digital_OUTput(@GPIOA_BASE, _GPIO_PINMASK_1)                          ' USER LED   Lebenslicht             407VG
     GPIO_Digital_Input(@GPIOD_BASE, _GPIO_PINMASK_15)                          ' Touch-Int                          407VG
     GPIO_Digital_OUTput(@GPIOB_BASE, _GPIO_PINMASK_0)                          ' SD-card_CS,                        405RG/407VG
+    ' MP3 config
+    GPIO_Digital_Output(@GPIOA_BASE, _GPIO_PINMASK_9)                          ' RST
+    GPIO_Digital_Input (@GPIOC_BASE, _GPIO_PINMASK_9)                          ' DREQ
+    GPIO_Digital_Output(@GPIOA_BASE, _GPIO_PINMASK_10)                         ' CS
+    GPIO_Digital_Output(@GPIOA_BASE, _GPIO_PINMASK_8)                          ' BSYNC
+    MP3_CS            = 1                                                      ' Deselect MP3_CS
+    MP3_RST           = 1                                                      ' Set MP3_RST pin
+    BSYNC             = 0                                                      ' Clear BSYNC
+    BSYNC             = 1                                                      ' Clear BSYNC
     #endif
     #ifdef Pyboard then
     GPIO_Digital_Output(@GPIOA_BASE, _GPIO_PINMASK_13)                         ' RTS1                               405RG/Pyboard
@@ -9525,13 +9524,20 @@ sub procedure init_gpios()
     end if
     USER_LED=1                                                                 ' Lebenslicht aus
     RTS1=1                                                                     ' RS485-RTS Senderichtung
+    ' EXTI
     SYSCFGEN_bit    = 1
     SYSCFG_EXTICR1  = word(0x2222)                                             ' Sys-Config  3-C,  2-C,  1-C,  0-C
     SYSCFG_EXTICR2  = word(0x5555)                                             ' Sys-Config  7-F,  6-F,  5-F,  4-F
+    #ifdef WeAct then
     SYSCFG_EXTICR3  = word(0x5555)                                             ' Sys-Config 11-F, 10-F,  9-F,  8-F
-    #ifndef VG then
     SYSCFG_EXTICR4  = word(0x0555)                                             ' Sys-Config 15-A, 14-F, 13-F, 12-F
-    #else
+    #endif
+    #ifdef PyBoard then
+    SYSCFG_EXTICR3  = word(0x5555)                                             ' Sys-Config 11-F, 10-F,  9-F,  8-F
+    SYSCFG_EXTICR4  = word(0x0555)                                             ' Sys-Config 15-A, 14-F, 13-F, 12-F
+    #endif
+    #ifdef VG then
+    SYSCFG_EXTICR3  = word(0x5555)                                             ' Sys-Config 11-F, 10-F,  9-F,  8-F
     SYSCFG_EXTICR4  = word(0x3555)                                             ' Sys-Config 15-D, 14-F, 13-F, 12-F
     #endif
     inputdelay_on   = 0
@@ -9583,11 +9589,21 @@ sub procedure init_gpios()
     opendrain = (RTC_BKP6R >> 16)  and 0xFFFF                                  ' Relais-Konfiguration OpenDrain setzen
     set_diginp_resistors(RTC_BKP7R and 0x0FFF,0)                               ' dig. Eingangs-Konfiguration (Port E) setzen
     input_resistors =  RTC_BKP7R   and 0x0FFF
+    ' MP3 config
+    GPIO_Digital_Output(@GPIOA_BASE, _GPIO_PINMASK_9)                          ' RST
+    GPIO_Digital_Input (@GPIOC_BASE, _GPIO_PINMASK_9)                          ' DREQ
+    GPIO_Digital_Output(@GPIOA_BASE, _GPIO_PINMASK_10)                         ' CS
+    GPIO_Digital_Output(@GPIOA_BASE, _GPIO_PINMASK_8)                          ' BSYNC
+    MP3_CS            = 1                                                      ' Deselect MP3_CS
+    MP3_RST           = 1                                                      ' Set MP3_RST pin
+    BSYNC             = 0                                                      ' Clear BSYNC
+    BSYNC             = 1                                                      ' Clear BSYNC
+    ' EXTI
     SYSCFGEN_bit    = 1
     SYSCFG_EXTICR1  = word(0x4444)                                             ' Sys-Config  3-E,  2-E,  1-E,  0-E
-    SYSCFG_EXTICR2  = word(0x4444)                                             ' Sys-Config  7-E,  6-E,  5-E,  4-E
-    SYSCFG_EXTICR3  = word(0x4444)                                             ' Sys-Config 11-E, 10-E,  9-E,  8-E
-    SYSCFG_EXTICR4  = word(0x4422)                                             ' Sys-Config 15-E, 14-E, 13-C, 12-C       407Mini
+    SYSCFG_EXTICR2  = word(0x5554)                                             ' Sys-Config  7-F,  6-F,  5-F,  4-E
+    SYSCFG_EXTICR3  = word(0x5525)                                             ' Sys-Config 11-F, 10-F,  9-C,  8-F
+    SYSCFG_EXTICR4  = word(0x4522)                                             ' Sys-Config 15-E, 14-F, 13-C, 12-F       407Mini
     inputdelay_on   = 0
     inputdelay_on.0 = RTC_BKP7R.16
     inputdelay_on.1 = RTC_BKP7R.17
@@ -9664,10 +9680,10 @@ sub procedure init_gpios()
     end if
     if testbit(RTC_BKP16R,6) then
        GPIO_Digital_Input(@GPIOB_BASE,  _GPIO_PINMASK_1)                       ' digital Input 2
-       setbit(diginpMask,0)
+       setbit(diginpMask,1)
     else
         GPIO_Analog_Input(@GPIOB_BASE, _GPIO_PINMASK_1)                        ' Analog Input 2
-        clearbit(diginpMask,0)
+        clearbit(diginpMask,1)
     end if
     set_diginp_resistors(RTC_BKP7R and 63, 0)                                  ' dig. Eingangs-Konfiguration setzen
     input_resistors = RTC_BKP7R and 63
@@ -9684,7 +9700,7 @@ sub procedure init_gpios()
     'set_pull_up_down(Port_A, 15, 0, 1)                                         ' Touch_Int Pullup
     USER_LED        = 1
     SYSCFGEN_bit    = 1
-    SYSCFG_EXTICR1  = word(0x1444)                                             ' Sys-Config  3-B,  2-E,  1-E,  0-E
+    SYSCFG_EXTICR1  = word(0x1111)                                             ' Sys-Config  3-B,  2-B,  1-B,  0-B
     SYSCFG_EXTICR2  = word(0x4441)                                             ' Sys-Config  7-E,  6-E,  5-E,  4-B
     SYSCFG_EXTICR3  = word(0x4444)                                             ' Sys-Config 11-E, 10-E,  9-E,  8-E
     SYSCFG_EXTICR4  = word(0x0444)                                             ' Sys-Config 15-A, 14-E, 13-E, 12-E
@@ -9794,7 +9810,7 @@ dim x1, y1, x2, y2 as word volatile
                 TFT_CS=0
                 TFT_line(x1, y1, x2, y2)
              end if
-             x1 = x2  y1 = y2
+             x1=x2   y1=y2
           else
               x1=0   y1=0
           end if
@@ -9818,7 +9834,7 @@ dim xfactor_oben, xfactor_unten, yfactor_links, yfactor_rechts as float volatile
        tft_cls9
     end if
     DBP_ON  RTC_BKP3R.0=0  RTC_BKP3R.1=0   RTC_BKP3R.2=0  DBP_OFF  xy_bit=0  lr_bit=0  ou_bit=0  ' X/Y und links/rechts Vertauschungsbits löschen
-    xfaktor = (TFT_WITH -1)/4095.0    yfaktor = (TFT_HIGHT-1)/4095.0                    ' ideal values  display/touch ratio
+    xfaktor = (TFT_WITH -1)/4095.0    yfaktor = (TFT_HIGHT-1)/4095.0           ' ideal values  display/touch ratio
     TFT_Clear
     fadenkreuz(30,30)
     bitte_kreuz
@@ -9861,7 +9877,7 @@ dim xfactor_oben, xfactor_unten, yfactor_links, yfactor_rechts as float volatile
     x_factor=sqrt(xfactor_unten * xfactor_oben)                                ' geometrisches Mittel oben/unten
     y_factor=sqrt(yfactor_links * yfactor_rechts)                              ' geometrisches Mittel links/rechts
     ' Die 4 angeklickten Punkte korrigieren:
-    X_offset=integer(float((30.0 - xc1*x_factor) + ((TFT_WITH-30.0) - (xc2*x_factor)) + (30.0 - xc3*x_factor) + ((TFT_WITH-30.0) - xc4*x_factor))/4.0)
+    X_offset=integer(float((30.0 - xc1*x_factor) + ((TFT_WITH-30.0) - (xc2*x_factor)) + (30.0 - xc3*x_factor) + ((TFT_WITH-30.0)  - xc4*x_factor))/4.0)
     Y_offset=integer(float((30.0 - yc1*y_factor) + (30.0  - yc2*y_factor) + ((TFT_hight-30.0) - yc3*y_factor) + ((TFT_hight-30.0) - yc4*y_factor))/4.0)
     TFT_Clear
     ' Fehlerprüfung: Faktorprüfung: Touch/Display-Faktoren >= ideale Faktoren < +30%, Offsetprüfung: Offset < 100
@@ -9880,7 +9896,7 @@ dim xfactor_oben, xfactor_unten, yfactor_links, yfactor_rechts as float volatile
     cwt("P1 ")  prl(float(xc1*x_factor + x_offset))  con("/")  prl(float(yc1*y_factor+y_offset))  cnl  cwt("P2 ")  prl(float(xc2*x_factor + x_offset))  con("/")  prl(float(yc2*y_factor+y_offset))   cnl
     cwt("P3 ")  prl(float(xc3*x_factor + x_offset))  con("/")  prl(float(yc3*y_factor+y_offset))  cnl  cwt("P4 ")  prl(float(xc4*x_factor + x_offset))  con("/")  prl(float(yc4*y_factor+y_offset))   cnl
     cwt("x-factor: ")  print_float(x_factor)  cwt(", y-factor: ")  print_float(y_factor)  cnl   ' und ausgeben
-    cwt("x-offset: ")  pr(x_offset,5)  cwt(", y-offset: ")  pr(y_offset,5)  cnl
+    cwt("x-offset: ")  pr(x_offset,5)         cwt(", y-offset: ")  pr(y_offset,5)         cnl
     cwt("xy-Bit: ")  con(testbit(RTC_BKP3R,0) +48)  cwt(", left/right-Bit: ")  con(testbit(RTC_BKP3R,1) +48)  cwt(", up/down-Bit: ")  con(testbit(RTC_BKP3R,2) +48)  cnl
     if (X_factor >= xfaktor) and (y_factor >= yfaktor) and (X_factor < (1.3 * xfaktor)) and (y_factor < (1.3 * yfaktor)) and (100 > abs(x_offset)) and (100 > abs(y_offset)) then
        cwt("*** Calibration OK ***")
@@ -9911,9 +9927,9 @@ sub procedure set_basic_colors
        TFT_color=9      TFT_Backcol=16    vfarb=9         hfarb=16          fillfarb=18
        aktiv_farbe=2    inakt_farbe=5     stat_farbe=4    alarm_farbe=2     TFT_print_Color = vt100_palette[7]
     else
-        TFT_color = cl_palette[9]  TFT_Backcol = cl_palette[16]   vfarb = cl_palette[9]  hfarb = cl_palette[16]  fillfarb = cl_palette[18]
+        TFT_color = cl_palette[9]    TFT_Backcol = cl_palette[16]  vfarb = cl_palette[9]        hfarb = cl_palette[16]   fillfarb = cl_palette[18]
         aktiv_farbe = cl_palette[2]  inakt_farbe = cl_palette[5]   stat_farbe = cl_palette[4]   alarm_farbe = cl_palette[2]
-        farb_dir = LEFT_TO_RIGHT   start_farb = cl_black   end_farb = cl_white   TFT_print_Color = cl_palette[vt100_palette[7]]
+        farb_dir = LEFT_TO_RIGHT     start_farb = cl_black         end_farb = cl_white          TFT_print_Color = cl_palette[vt100_palette[7]]
     end if
     pen=1  filled=0
 end sub
@@ -9926,8 +9942,8 @@ sub procedure start_tft
     TFT_Set_Font(@TFT_defaultFont, TFT_print_Color, FO_HORIZONTAL)
 end sub
 
-sub procedure Init_All_TFT(dim modus as word)
-dim n as word volatile
+sub procedure Init_All_TFT(dim modus as word)                                  ' modus=0: read config bit for palette use
+dim n as word volatile                                                         ' modus=1: do not read config
 
     tft_type = (RTC_BKP5R >> 25) and 7
     if tft_type<2 then
@@ -10529,7 +10545,6 @@ sub function set_clock as word                                                 '
     rtc_init_mode_off                                                          ' free running mode
     twoAclock=0                                                                ' 2Uhr A
 end sub
-
 
 sub procedure clear_rtc_alarm_A                                                ' RTC Alarm A löschen
     DBP_ON           RTC_WPR=0xCA    RTC_WPR=0x53                              ' Zugriff auf RTC ermöglichen
@@ -11375,7 +11390,7 @@ dim loopc as word volatile
     if ser1_zeiger=0 then  result=0 exit end if
     loopc=0                                                                    ' loopcounter to bottom of buffer
     result = recstr1[0]                                                        ' take the lowest byte
-    do
+    do                                                                         ' lifo
       recstr1[loopc] = recstr1[loopc +1]                                       ' shift right receive buffer one byte
       inc(loopc)                                                               ' next byte
     loop until loopc = ser1_zeiger                                             ' last received byte?
@@ -11389,7 +11404,7 @@ dim loopc as word volatile
     if usb_zeiger=0 then  result=0  exit end if
     loopc=0                                                                    ' loopcounter to bottom of buffer
     result = recstrusb[0]                                                      ' take the lowest byte
-    do
+    do                                                                         ' lifo
       recstrusb[loopc] = recstrusb[loopc +1]                                   ' shift right receive buffer one byte
       inc(loopc)                                                               ' next byte
     loop until loopc = usb_zeiger                                              ' last received byte?
@@ -11402,7 +11417,7 @@ dim loopc as word volatile
     if ser8_zeiger=0 then  result=0 exit end if
     loopc=0                                                                    ' loopcounter to bottom of buffer
     result = recstr8[0]                                                        ' take the lowest byte
-    do
+    do                                                                         ' lifo
       recstr8[loopc] = recstr8[loopc +1]                                       ' shift right receive buffer one byte
       inc(loopc)                                                               ' next byte
     loop until loopc = ser8_zeiger                                             ' last received byte?
@@ -11453,7 +11468,7 @@ dim loopd as byte volatile
     if ser2_zeiger=0 then  result=0  exit end if
     loopd=0                                                                    ' loopcounter to bottom of buffer
     result = recstr2[0]                                                        ' take the lowest byte
-    do
+    do                                                                         ' lifo
       recstr2[loopd] = recstr2[loopd +1]                                       ' shift right receive buffer one byte
       inc(loopd)                                                               ' next byte
     loop until loopd = ser2_zeiger                                             ' last received byte?
@@ -11466,7 +11481,7 @@ dim loopd as byte volatile
     if ser3_zeiger=0 then  result=0  exit end if
     loopd=0                                                                    ' loopcounter to bottom of buffer
     result = recstr3[0]                                                        ' take the lowest byte
-    do
+    do                                                                         ' lifo
       recstr3[loopd] = recstr3[loopd +1]                                       ' shift right receive buffer one byte
       inc(loopd)                                                               ' next byte
     loop until loopd = ser3_zeiger                                             ' last received byte?
@@ -11479,7 +11494,7 @@ dim loopd as byte volatile
     if ser4_zeiger=0 then  result=0  exit end if
     loopd=0                                                                    ' loopcounter to bottom of buffer
     result = recstr4[0]                                                        ' take the lowest byte
-    do
+    do                                                                         ' lifo
       recstr4[loopd] = recstr4[loopd +1]                                       ' shift right receive buffer one byte
       inc(loopd)                                                               ' next byte
     loop until loopd = ser4_zeiger                                             ' last received byte?
@@ -11495,7 +11510,7 @@ dim loopd as byte volatile
     if ser2_zeiger=0  then  result=0  exit end if
     loopd=0                                                                    ' loopcounter to bottom of buffer
     result = recstr2[0]                                                        ' take the lowest byte
-    do
+    do                                                                         ' lifo
       recstr2[loopd] = recstr2[loopd +1]                                       ' shift right receive buffer one byte
       inc(loopd)                                                               ' next byte
     loop until loopd = ser2_zeiger                                             ' last received byte?
@@ -11508,7 +11523,7 @@ dim loopd as byte volatile
     if ser2_zeiger=0 then  result=0  exit end if
     loopd=0                                                                    ' loopcounter to bottom of buffer
     result = recstr2[0]                                                        ' take the lowest byte
-    do
+    do                                                                         ' lifo
       recstr2[loopd] = recstr2[loopd +1]                                       ' shift right receive buffer one byte
       inc(loopd)                                                               ' next byte
     loop until loopd = ser2_zeiger                                             ' last received byte?
@@ -12674,12 +12689,13 @@ sub procedure init_vars                                                        '
   listcounter=0
   hiliting = true
   modbus_bytes=4
+  MIDI_offset=0
 end sub
 
 sub procedure print_line(dim ls as word)                                       ' Programmzeile ausdrucken
 dim n as word volatile
 
-    unl  'newline                                                              ' Zeilenvorschub
+    unl                                                                        ' Zeilenvorschub
     listcounter=0   clear_listline    listswitch=ls
     print_format((progline[1] <<8 ) + instr_byte, 6)                           ' Zeilennummer ausgeben
     if ((progline[2] and 63) >1) and ((progline[2] and 63) <9) then
@@ -14010,7 +14026,14 @@ select case test
  case "o"
       increment = 2
       select case test1
-        case "f"  token = 120          increment = 3                           ' off
+        case "f"
+                  if test2="f" then
+                     if test3="s" then
+                        token=226      increment = 6                           ' offset
+                     else
+                         token = 120   increment = 3                           ' off
+                     end if
+                  end if
         case "n"  token = 168          inc(on_flag)                            ' on
         case "p"  token = 13           increment = 4      ext_flag = 1         ' open
         case "r"  token = 187                                                  ' or
@@ -14095,7 +14118,7 @@ select case test
              token=34                         increment=2       ext_flag=1     ' rd
              #endif
         case "E"  
-             if let_flag then  token=220      increment=2       var_flag=1  end if             ' result
+             if let_flag then  token=220      increment=2       var_flag=1  end if  ' result
         #ifndef 411 then
         case "L"               token=233      increment=2                      ' release
         #endif
@@ -14528,7 +14551,6 @@ select case test
       end if
  case ":"
       ext_flag=0   kolon=1   repl_flag=1    token=1                            ' repl aktivieren (nur für execute_instr)
-      'ext_flag = 0  if  numsw = 1  then  token = 1  kolon = 1  else  token = 0  end if  ' im directmode nicht erlaubt also anweisung zu ende
 end select
 if modus = 0 then
    if token = 0 then perror = 2  end if                                        ' es konnte kein token erzeugt werden - muss ein fehler sein
@@ -14949,7 +14971,7 @@ dim wordvar as word volatile
       case 224   resultat = extended(get_adc_sample(2))   'extended(ADC_Sample[12])                           ' ad3
       #endif
       case 225   resultat = extended(timecount)                                ' time
-      'case 226   frei = progmax -1 - progend  resultat = extended(frei)        ' free
+      case 226   resultat = extended(midi_offset)                              ' offset
       #ifndef 411 then
       case 227   if seis_bit then                                              ' rand
                     seis_bit=0  RNG_CR.2=0  nop nop  RNG_CR.2=1
@@ -14977,7 +14999,7 @@ dim wordvar as word volatile
       case 235   resultat = extended(TIM2_CNT) / 2.0                           ' milli
       case 236   resultat = extended(ser_zeiger)                               ' buf
       #ifndef 411 then
-      case 237   resultat = extended(get_adc_sample(3))   'resultat = extended(ADC_Sample[13])                           ' ad4
+      case 237   resultat = extended(get_adc_sample(3))                        ' ad4
       #endif
       case 238   resultat = extended(get_seconds(0))                           ' second
       case 239   resultat = extended(get_minutes(0))                           ' minute
@@ -15066,7 +15088,7 @@ dim mstring as string[32]  volatile
                 else
                     resultat = 0.0
                 end if
-      case 29   resultat = extended(konsole_uart)
+      case 29   resultat = extended(konsole_uart)                              ' aktuelles Konsolen-Interface
       case 30   resultat = extended(RTC_BKP6R         and 0x0000FFFF)          ' Zustand der relay-Ausgänge (Ein/Aus)
       case 31   resultat = extended((RTC_BKP6R >> 16) and 0x0000FFFF)          ' Zustand der relay-Ausgänge (Opendrains)
       case 32   resultat = extended(RTC_BKP7R         and 0x00000FFF)          ' Pulldowns/Pullups der digitalen Eingänge (untere 16-Bit)
@@ -15147,10 +15169,10 @@ dim mstring as string[32]  volatile
       case 52   resultat = extended(release_factor)
       #endif
       case 53   resultat = extended(tft_type)
-      case 54   if use_palette > 0 then                                        ' use Palette
+      case 54   if use_palette > 0 then                                        ' Palette ein?
                    resultat = tru
                 else
-                    resultat = 0.0
+                    resultat = 0.0                                             ' aus
                 end if
       case 55   resultat = extended(vfarb)
       case 56   resultat = extended(hfarb)
@@ -15282,8 +15304,10 @@ dim mstring as string[32]  volatile
                 resultat = extended(word(x4_char))
       case 126
                 resultat = extended(modbus_bytes)
-      case 129  
+      case 129                                                                 ' Anzahl Datei-Slots auf dem Flash-Chip
                 resultat = extended(sf_prgz)
+      case 130                                                                 ' 'Flash'-Chip:  EEPROM=1   Flash=0
+                resultat = extended(eeprom)
       #ifndef 411 then
       case 128                                                                 ' Zeichen im Matrix-Tastatur-Puffer
                 resultat = extended(ser8_zeiger)
@@ -15297,7 +15321,7 @@ dim mstring as string[32]  volatile
                 resultat = extended(MX_decoder)
       case 135                                                                 ' Adresse des Matrix-Strings
                 resultat = extended(longword(@Matrix_string))
-      case 137
+      case 137                                                                 ' Sprache 0=deutsch  1=engl. (US)
                 resultat = extended(language)
       case 142                                                                 ' Data-Bits Com2
                 resultat = extended(bkpram_read_byte(0))
@@ -15330,7 +15354,7 @@ dim mstring as string[32]  volatile
       case 201
                 resultat = extended(RTC_BKP8R)                                 ' Konfigurationen: Konsole-Nr., USB-Delay, PWMs, Analog-Inputs
       case 300  
-                resultat = extended(board)                                     ' Auf welchem Board läuft pahlbasic?
+                resultat = extended(board)                                     ' Auf welchem Board läuft pahlbasic aktuell?
       #ifndef 411 then
       case 421  resultat = extended(longword(@chip_id1))
       case 543  resultat = extended(longword(@chip_id2))
@@ -15734,6 +15758,8 @@ dim wresult as word volatile
                     InitTimer7_for_ADSR
           #endif
           case 225  TIM3_CNT=0   tacks=0   timecount=longword(mresult)         ' time
+          case 226  if fabs(mresult) >12.0 then  perror=13 exit end if         ' offset
+                    MIDI_offset=integer(mresult)
           case 228  relay=wresult and relayMask                                ' relay
           #ifndef 411 then
           case 229  if (mresult<0.0) or (mresult>100.0) then  perror=13 exit end if   ' sustain
@@ -15836,9 +15862,9 @@ dim n as word volatile
 end sub
 
 sub procedure clearall
-    init_vars    clear_stacks      clear_calc_stack     clear_int_stack
-    clear_var    clear_string      clear_arrays         clear_args
-    clear_func_proc                clear_filepointers   clear_paras
+    init_vars    clear_stacks     clear_calc_stack     clear_int_stack
+    clear_var    clear_string     clear_arrays         clear_args
+    clear_func_proc               clear_filepointers   clear_paras
     clear_buffers
 end sub
 
@@ -16300,9 +16326,11 @@ sub procedure instr_debug                                                      '
 end sub
 
 sub function SD_Open_File_for_read_write(dim pos, file_ext, modus as word) as short  ' öffnet Datei auf SD-Card, modus: 0=read, 1=write
+const
+    Any_File=99
 dim overwrite     as word       volatile
     pos2          as word       volatile
-    dumy,ferror   as short      volatile
+    dumy, ferror  as short      volatile
     mstr          as string[96] volatile
 
     result=0  overwrite=0
@@ -16311,7 +16339,10 @@ dim overwrite     as word       volatile
        pos2=select_str(pos,3)
        SPI_Set_Active(@SPI2_Read, @SPI2_Write)
        mstr=progname   upper   qstr=pstr   progname=pstr   'cwtnl(progname)  cwtnl(pstr)
-       if file_ext_test <> file_ext then  perror=13  sys("wrong file type",0) exit end if   ' File Extension stimmt nicht überein
+       l_resultat=longword(file_ext_test)
+       if file_ext < Any_File then
+           if l_resultat <> file_ext then  perror=13  sys("wrong file type",0) exit end if   ' File Extension stimmt nicht überein
+       end if
        int2_off  dumy = FAT32_Exists(@progname)  int2_on
        if dumy<0 then  perror=19  sys(sd_read_err,0)  pr(FAT32_GetError,5) exit end if
        if modus=0 then                                                         ' open for read
@@ -16647,18 +16678,18 @@ dim tstring    as string[256]  volatile
                   int2_off  fhandle = FAT32_GetFreeSpace(@freeClusts, @bytesPerCluster)  int2_on
                   if fhandle<0 then  perror=19  sys(sd_read_err,0)  pr(FAT32_GetError,5) exit end if
                   select case word(call_par[1])
-                    case 0    k=1
-                    case 1    k=2
+                    case 0    k=1                                              ' lesen
+                    case 1    k=2                                              ' erzeugen
                               if freeClusts<17 then  perror=19  sys(diskspace,0) exit end if
-                    case 2    k=4
+                    case 2    k=4                                              ' anhängen
                               if freeClusts<17 then  perror=19  sys(diskspace,0) exit end if
                     case else perror=13  exit
                   end select
-                  int2_off  fhandle = FAT32_Exists(@pstr)  int2_on
-                  if fhandle<0 then  perror=19  sys(fileexist,0)  pr(FAT32_GetError,5) exit end if
-                  select case k
-                    case 1,4  if fhandle=0 then  perror=18 exit end if
-                    case 2    if fhandle>0 then  perror=23 exit end if
+                  int2_off  fhandle = FAT32_Exists(@pstr)  int2_on             ' existiert Datei schon?
+                  if fhandle<0 then  perror=19  sys(fileexist,0)  pr(FAT32_GetError,5) exit end if  ' Lesefehler
+                  select case k                                                ' suche den Fehler  :-)
+                    case 1,4  if fhandle=0 then  perror=18 exit end if         ' lesen? anhängen? Datei existiert nicht
+                    case 2    if fhandle>0 then  perror=23 exit end if         ' schreiben? erzeugen? Datei existiert schon
                   end select
                   SD_Card_Set_Time
                   int2_off  fhandle = FAT32_Open(@pstr, byte(k))  int2_on
@@ -16699,12 +16730,12 @@ dim tstring    as string[256]  volatile
            end select
       case 5                                                                                    ' Fileptr
            n = word(call_par[0])
-           if (n<10) or (n>24) then  perror=30 exit end if
-           if (n<21) then
+           if (n<10) or (n>24) then  perror=30 exit end if                     ' kein Filehandler
+           if (n<21) then                                                      ' Flash Chip
               if sf_flag=0     then  perror=17 exit end if                                      ' externes Eeprom vorhanden?
               registre = dat_nr[n -10] <<16
               func_var_res = extended(file_pointer[n -10] - registre -256)
-           else
+           else                                                                ' SD-Card
                if SD_Card_present=0 then  No_SD_Card exit end if
                SPI_Set_Active(@SPI2_Read, @SPI2_Write)
                int2_off  fhandle = FAT32_Tell(n -21, @registre)  int2_on
@@ -16713,7 +16744,7 @@ dim tstring    as string[256]  volatile
            end if
       case 6                                                                                    ' Eof
            n = word(call_par[0])
-           if (n<10) or (n>24)   then  perror=30  exit end if
+           if (n<10) or (n>24)   then  perror=30  exit end if                  ' kein Filehandler
            if (n<21) then                                                      ' 10...20 ser. Flash-Chip
               if sf_flag=0       then  perror=17  exit end if                  ' externes Eeprom vorhanden?
               if dat_nr[n -10]=0 then  perror=25  exit end if
@@ -18163,7 +18194,7 @@ select case progline[2]
        #else
        if (merker<>2)  then  perror=2  sys(parameters,0)      exit end if
        if (para[1]=0)  then                                                    ' com2, Baud=0 oder Baud=1...
-          DBP_ON  RTC_BKP5R.29=0  RTC_BKP17R=0  RTC_BKP16R=0  DBP_OFF  gps_on=0  OK    ' gps aus, com2 aus, Umkonfigurationen aus, gps_on aus
+          DBP_ON  RTC_BKP5R.29=0  RTC_BKP17R=0  RTC_BKP16R=0  DBP_OFF  gps_on=0  ' gps aus, com2 aus, Umkonfigurationen aus, gps_on aus
           exit  
        end if
        if (para[1]<300) or  (para[1]>1000000) then  perror=13 exit end if      ' Baud
@@ -18221,8 +18252,8 @@ select case progline[2]
   #ifndef 411 then
     #ifndef 405RG
   case 164                                                                     ' keypad   Matrix-Keyboard
-       if progline[4]=120 then  DBP_ON  clearbit(RTC_BKP8R,29)  DBP_OFF  keyboard_active=0  OK exit end if      ' Matrix off
-       if progline[4]=168 then  DBP_ON  setbit(RTC_BKP8R,29)    DBP_OFF  keyboard_active=1  OK exit end if      ' Matrix on
+       if progline[4]=120 then  DBP_ON  clearbit(RTC_BKP8R,29)  DBP_OFF  keyboard_active=0 exit end if      ' Matrix off
+       if progline[4]=168 then  DBP_ON  setbit(RTC_BKP8R,29)    DBP_OFF  keyboard_active=1 exit end if      ' Matrix on
        merker=get_parameters(4)                                                '
        if (para[0]>15) or (para[0]<0) then  perror=13 exit end if
        set_matrix(word(para[0]))
@@ -18237,15 +18268,17 @@ select case progline[2]
        if merker>3 then
           keyMode4=para[3] and 1
           DBP_ON
-          if keyMode4 then  setbit(RTC_BKP8R,28) else  clearbit(RTC_BKP8R,28) end if  ' play intern/extern
+          RTC_BKP8R.28=keyMode4.0                                              ' config: play intern/extern
+          'if keyMode4 then  setbit(RTC_BKP8R,28) else  clearbit(RTC_BKP8R,28) end if  ' config: play intern/extern
           DBP_OFF
        end if
        merker=longword(para[0])
        DBP_ON
        RTC_BKP8R=RTC_BKP8R and 4294966335
-       RTC_BKP8R=RTC_BKP8R or (merker<<6)                                      ' Matrix speichern
+       RTC_BKP8R=RTC_BKP8R or (merker<<6)                                      ' config: Matrix speichern
        keyMode1=para[1] and 1
-       if keyMode1 then  setbit(RTC_BKP8R,10) else  clearbit(RTC_BKP8R,10) end if  ' active high/active low
+       RTC_BKP8R.10=keymode1.0                                                 ' active high/active low
+       'if keyMode1 then  setbit(RTC_BKP8R,10) else  clearbit(RTC_BKP8R,10) end if  ' active high/active low
        DBP_OFF
     #endif
   #endif
@@ -18256,7 +18289,6 @@ select case progline[2]
           if ((para[0]>=0) and (para[0]<10)) or ((para[0]>25) and (para[0]<32)) then
              if para[0]>25 then para[0]=para[0]-16 end if
              DBP_ON  RTC_BKP8R = longword((RTC_BKP8R and 0xFFFFFFF0) or para[0])  DBP_OFF
-             OK
           end if
           exit
        end if
@@ -18279,33 +18311,26 @@ select case progline[2]
          #ifndef 411 then
          case 0,1,2,3,4,5,6,7                                                  ' Display-Type
               RTC_BKP5R.25=merker.0  RTC_BKP5R.26=merker.1  RTC_BKP5R.27=merker.2
-              sys(disp_type_chg,9)
          #else
          case 0,1,2,7                                                          ' Display-Type
               RTC_BKP5R.25=merker.0  RTC_BKP5R.26=merker.1  RTC_BKP5R.27=merker.2
-              sys(disp_type_chg,9)
          #endif
          case 10                                                               ' Palette aus
               setbit(RTC_BKP5R,24)
-              sys(disp_type_chg,9)
          case 11                                                               ' Palette ein
               clearbit(RTC_BKP5R,24)
-              sys(disp_type_chg,9)
          case 12,20                                                            ' Drehung aus
               clearbit(RTC_BKP5R,23)
-              sys(disp_type_chg,9)
          case 13,21                                                            ' Drehung ein
               setbit(RTC_BKP5R,23)
-              sys(disp_type_chg,9)
          case 14,30                                                            ' IPS aus
               clearbit(RTC_BKP8R,30)
-              sys(disp_type_chg,9)
          case 15,31                                                            ' IPS ein
               setbit(RTC_BKP8R,30)
-              sys(disp_type_chg,9)
          case else
               perror=13  DBP_OFF exit
        end select
+       sys(disp_type_chg,9)
        DBP_OFF
   case 162                                                                     ' fix$
        merker = longword(calculate_exp(4))
@@ -18337,25 +18362,25 @@ select case progline[2]
             case 228                                                           ' relay (pwms in relay umwandeln)
                  DBP_ON
                  select case progline[2]
-                   case 217  setbit(RTC_BKP16R,0)  OK                          ' pwm1
-                   case 218  setbit(RTC_BKP16R,1)  OK                          ' pwm2
-                   case 202  setbit(RTC_BKP16R,2)  OK                          ' pwm3
-                   case 205  setbit(RTC_BKP16R,3)  OK                          ' pwm4
+                   case 217  setbit(RTC_BKP16R,0)                              ' pwm1
+                   case 218  setbit(RTC_BKP16R,1)                              ' pwm2
+                   case 202  setbit(RTC_BKP16R,2)                              ' pwm3
+                   case 205  setbit(RTC_BKP16R,3)                              ' pwm4
                  end select
                  DBP_OFF
             case 217,218,202,205                                               ' pwm1, pwm2, pwm3, pwm4 (pwms wieder in pwms zurück wandeln)
                  DBP_ON
                  select case progline[2]
-                   case 217  clearbit(RTC_BKP16R,0)  OK                        ' pwm1
-                   case 218  clearbit(RTC_BKP16R,1)  OK                        ' pwm2
-                   case 202  clearbit(RTC_BKP16R,2)  OK                        ' pwm3
-                             clearbit(RTC_BKP16R,4)  OK                        ' kein diginp mehr
-                   case 205  clearbit(RTC_BKP16R,3)  OK                        ' pwm4
+                   case 217  clearbit(RTC_BKP16R,0)                            ' pwm1
+                   case 218  clearbit(RTC_BKP16R,1)                            ' pwm2
+                   case 202  clearbit(RTC_BKP16R,2)                            ' pwm3
+                             clearbit(RTC_BKP16R,4)                            ' kein diginp mehr
+                   case 205  clearbit(RTC_BKP16R,3)                            ' pwm4
                  end select
                  DBP_OFF
             case 232                                                           ' diginp (pwm3 in diginp umwandeln)
                  select case progline[2]
-                   case 202  DBP_ON  setbit(RTC_BKP16R,4)  DBP_OFF   OK        ' pwm3 wird diginp (Vorbereitung für Messeingang mit set diginp 6)
+                   case 202  DBP_ON  setbit(RTC_BKP16R,4)  DBP_OFF             ' pwm3 wird diginp (Vorbereitung für Messeingang mit set diginp 6)
                    case else perror=13  exit
                  end select
           end select
@@ -18368,12 +18393,12 @@ select case progline[2]
             case 228                                                           ' relay (pwms in relay umwandeln)
                  DBP_ON
                  select case progline[2]
-                   case 217  setbit(RTC_BKP16R,0)  OK                          ' pwm1
+                   case 217  setbit(RTC_BKP16R,0)                              ' pwm1
                    #ifndef VG then
-                   case 218  setbit(RTC_BKP16R,1)  OK                          ' pwm2
+                   case 218  setbit(RTC_BKP16R,1)                              ' pwm2
                    #endif
-                   case 202  setbit(RTC_BKP16R,2)  OK                          ' pwm3
-                   case 205  setbit(RTC_BKP16R,3)  OK                          ' pwm4
+                   case 202  setbit(RTC_BKP16R,2)                              ' pwm3
+                   case 205  setbit(RTC_BKP16R,3)                              ' pwm4
                    case else perror=13
                  end select
                  DBP_OFF
@@ -18384,19 +18409,19 @@ select case progline[2]
             #endif
                  DBP_ON
                  select case progline[2]
-                   case 217  clearbit(RTC_BKP16R,0)  OK                        ' pwm1
+                   case 217  clearbit(RTC_BKP16R,0)                            ' pwm1
                    #ifndef VG then
-                   case 218  clearbit(RTC_BKP16R,1)  OK                        ' pwm2
+                   case 218  clearbit(RTC_BKP16R,1)                            ' pwm2
                    #endif
-                   case 202  clearbit(RTC_BKP16R,2)  OK                        ' pwm3
-                             clearbit(RTC_BKP16R,4)  OK                        ' kein diginp mehr
-                   case 205  clearbit(RTC_BKP16R,3)  OK                        ' pwm4
+                   case 202  clearbit(RTC_BKP16R,2)                            ' pwm3
+                             clearbit(RTC_BKP16R,4)                            ' kein diginp mehr
+                   case 205  clearbit(RTC_BKP16R,3)                            ' pwm4
                    case else perror=13
                  end select
                  DBP_OFF
             case 232                                                           ' diginp (pwm3 in diginp umwandeln)
                  select case progline[2]
-                   case 202  DBP_ON  setbit(RTC_BKP16R,4)  DBP_OFF   OK        ' pwm3 wird diginp (Vorbereitung für Messeingang mit set diginp 6)
+                   case 202  DBP_ON  setbit(RTC_BKP16R,4)  DBP_OFF             ' pwm3 wird diginp (Vorbereitung für Messeingang mit set diginp 6)
                    case else perror=13  exit
                  end select
           end select
@@ -18429,7 +18454,7 @@ select case progline[2]
             case else DBP_OFF  perror=13  exit
           end select
           DBP_OFF
-          init_pwms(para[0])  OK
+          init_pwms(para[0])
        else
            perror=2  sys(parameters,0)  exit
        end if
@@ -18454,7 +18479,7 @@ select case progline[2]
                  select case progline[2]
                    case 222  setbit(RTC_BKP16R,5)   setbit(diginpMask,0)       ' ad1 in diginp1
                    case 223  setbit(RTC_BKP16R,6)   setbit(diginpMask,1)       ' ad2 in diginp2
-                   case else perror=13  DBP_OFF  exit
+                   case else perror=13  DBP_OFF exit
                  end select
                  DBP_OFF
             case 222,223                                                       ' ad1, ad2              zurückwandeln
@@ -18462,7 +18487,7 @@ select case progline[2]
                  select case progline[2]
                    case 222  clearbit(RTC_BKP16R,5)   clearbit(diginpMask,0)   ' ad1 in ad1
                    case 223  clearbit(RTC_BKP16R,6)   clearbit(diginpMask,1)   ' ad2 in ad2
-                   case else perror=13  DBP_Bit=0 exit
+                   case else perror=13  DBP_OFF exit
                  end select
                  DBP_OFF
           end select
@@ -18543,7 +18568,7 @@ select case progline[2]
          case "w"  RTC_BKP5R.1=0  RTC_BKP5R.0=1
          case "l"  RTC_BKP5R.1=1  RTC_BKP5R.0=0
          case "f"  RTC_BKP5R.1=1  RTC_BKP5R.0=1
-         case else perror=13      exit
+         case else perror=13  DBP_OFF  exit
        end select
        DBP_OFF
 
@@ -18560,7 +18585,7 @@ select case progline[2]
               #ifndef 411 then
          case 8                                                                ' midi
               select case progline[5]
-                case 168  DBP_ON     RTC_BKP5R.28=1        DBP_OFF             ' on
+                case 168  DBP_ON     RTC_BKP5R.28=1  DBP_OFF                   ' on
                           Init_ser2_ivt(31250,8,0,1)
                           midi_on=1  start_MIDI_sound
                 case 120  DBP_ON     RTC_BKP5R.28=0  DBP_OFF                   ' off
@@ -18591,6 +18616,7 @@ select case progline[2]
                 case 29   DBP_ON  setbit(RTC_BKP5R,4)    DBP_OFF               ' negative Logik
                 case else perror=13  exit
               end select
+
          case else perror=2  exit
        end select
 
@@ -18852,6 +18878,7 @@ sub function play_midi(dim handle as short, dim modus as word, dim sfactor as fl
 const DDS=0
 const DDS2=1
 const SYNTH=2
+
   #ifdef 407ZG then
   const Bufferlen=16384 +8192
   #else
@@ -18862,21 +18889,21 @@ dim   ferror                        as  short       volatile
 dim   n_bytes, n                    as  word        volatile
 dim   jump, set_flag                as  word        volatile
 dim   midiformat, anzahl_Tracks     as  word        volatile
-dim   quater_per_min, muart, canal  as  word        volatile
-dim   midi_tempo                    as  float       volatile
-dim   MTrk_ende                     as ^byte        volatile
-dim   byte_pointer                  as ^byte        volatile
-dim   MTrk_lang                     as  longword    volatile
-dim   MTrk_start                    as  longword    volatile
-dim   deltatime                     as  longword    volatile
-dim   microsec_per_beat             as  longword    volatile
-dim   file_size                     as  longword    volatile
-dim   midi_buffer                   as  byte[Bufferlen] volatile
+dim   quater_per_min, muart, canal, no_write  as  word        volatile
+dim   midi_tempo                              as  float       volatile
+dim   MTrk_ende                               as ^byte        volatile
+dim   byte_pointer                            as ^byte        volatile
+dim   MTrk_lang                               as  longword    volatile
+dim   MTrk_start                              as  longword    volatile
+dim   deltatime                               as  longword    volatile
+dim   microsec_per_beat                       as  longword    volatile
+dim   file_size                               as  longword    volatile
+dim   midi_buffer                             as  byte[Bufferlen] volatile
 
     
     if perror then exit end if
     result=handle
-    if handle<0 then  perror=19  sys(filenotopen,0) exit end if ' Fehler beim Öffnen
+    if handle<0 then  perror=19  sys(filenotopen,0) exit end if                ' Fehler beim Öffnen
     int2_off   ferror=FAT32_Size(@pstr, @file_size)   int2_on
     if file_size>Bufferlen then
        file_size=Bufferlen
@@ -18900,7 +18927,7 @@ dim   midi_buffer                   as  byte[Bufferlen] volatile
     wend
     MTrk_lang=get_32Bit_MIDI_Data(@midi_buffer[MTrk_start+04])       'sys("Tracklänge: ",9)   prl(MTrk_lang)
     byte_pointer=@midi_buffer[MTrk_start+08]   MTrk_ende=@midi_buffer[file_size-1]   jump=0   muart=uart_nr
-    if sfactor=0 then  sfactor=1.0 end if   
+    if sfactor=0 then  sfactor=1.0 end if                                      ' kein Speedfaktor? dann 1.0
     clear_midi_counter
     if midi_device=SYNTH then
        uart_nr=MIDI
@@ -18922,7 +18949,9 @@ dim   midi_buffer                   as  byte[Bufferlen] volatile
         end if
         clear_midi_volume
     end if
-    if para[0]<6 then  chanel_count=0  end if
+    no_write=0
+    if modus>7 then  no_write=1  modus=modus-8 end if
+    if modus<6 then  chanel_count=0  end if
     midi_quadrat=modus
     all_interrupts_inactiv
     set_flag=0
@@ -19002,13 +19031,17 @@ dim   midi_buffer                   as  byte[Bufferlen] volatile
            case 0xF0 if midi_byte=0xFF then
                         inc(byte_pointer)
                         select case byte_pointer^
-                          case 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07
+                          case 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07         ' Text im MIDI-Stream
                                     inc(byte_pointer)
-                                    n_bytes=byte_pointer^  sys("",9)
-                                    for n=1 to n_bytes  inc(byte_pointer)  con(byte_pointer^)  next n
+                                    n_bytes=byte_pointer^  
+                                    if no_write=0 then                         ' Text unterdrückt?
+                                       sys("",9)
+                                       for n=1 to n_bytes  inc(byte_pointer)  con(byte_pointer^)  next n  ' Textausgabe
+                                    else
+                                        byte_pointer=byte_pointer +n_bytes     ' Textausgabe überspringen
+                                    end if
                                     inc(byte_pointer)
-                          case 0x2F inc(byte_pointer)
-                                    'sys("ME2F1",9)
+                          case 0x2F inc(byte_pointer)                          ' ME2F1  Stopp MIDI-Stimmen
                                     if byte_pointer^ =0x00 then  
                                        if midi_device=SYNTH then
                                           uart(0x2F)
@@ -19017,14 +19050,12 @@ dim   midi_buffer                   as  byte[Bufferlen] volatile
                                        end if
                                        exit 
                                     end if
-                          case 0x51 inc(byte_pointer)                                         ' set Tempo
-                                    'sys("ME51",9)
+                          case 0x51 inc(byte_pointer)                          ' ME51  set Tempo
                                     if byte_pointer^ =0x03 then  inc(byte_pointer) end if
                                     microsec_per_beat=get_24Bit_MIDI_Data(byte_pointer)
                                     'midi_tempo=microsec_per_beat/1000.0/quater_per_min       ' Millisekunden
                                     midi_tempo=microsec_per_beat/quater_per_min               ' Mikrosekunden
                                     if midi_device=DDS2 then
-                                       'sys("Tempo: ",9)  prf(midi_tempo)
                                        tempo=word(sfactor*320000.0/midi_tempo)   'InitTimer7_for_ADSR
                                        set_flag=1
                                     end if
@@ -19055,8 +19086,7 @@ dim   midi_buffer                   as  byte[Bufferlen] volatile
 '                                'sys("ME7F",9)
 '                                 n_bytes=byte_pointer^    byte_pointer=byte_pointer +n_bytes +1
                            case else
-                                inc(byte_pointer)
-                                'sys("META?",9)
+                                inc(byte_pointer)                              ' META ?
                                 n_bytes=byte_pointer^    byte_pointer=byte_pointer +n_bytes +1
                           end select
                      end if
@@ -19091,6 +19121,7 @@ dim   message, W1, W2            as byte  volatile
        if (para[0]<0) or (para[0]>6) then  perror=13 exit end if               ' Modus  lin./lin.=0,  quad./quad.=1,  exp./exp.=2,  quad./lin=3,  exp./lin=4,  exp./quad.=5
        if (para[1]<0) or (para[1]>2) then  perror=13 exit end if               ' Device 0/1=DDS  2=Synthi
        if (Par[2]>0.24) and (par[2]<20.1) then  speed_factor=par[2] end if
+       if para[3] then  para[0]=para[0]+8 end if                               ' Modus um 8 erhöhen, schaltet no_write ein
        midi_device=para[1]
        if play_midi(SD_Open_File_for_read_write(2, MIDI_Mode, Read_Mode), para[0], speed_factor)<0 then  perror=19 exit end if
        w_resultat=mwresultat
@@ -19102,7 +19133,7 @@ dim   message, W1, W2            as byte  volatile
     if (RTC_BKP17R<>31250) or (gps_on=1) then  perror=19         exit end if
     #endif
     if get_parameters(2)<2 then  perror=2   sys(parameters,0)    exit end if
-    if (para[0]<1) or  (para[0]>6)   then  perror=13  pcon("1") exit end if
+    if (para[0]<1) or  (para[0]>6)    then  perror=13  pcon("1") exit end if
     if (para[2]<0) and (para[2]>127)  then  perror=13  pcon("3") exit end if
     if (para[3]<0) and (para[3]>127)  then  perror=13  pcon("4") exit end if
     dec(para[0])
@@ -19162,9 +19193,14 @@ sub function stop_note(dim note_nr as word) as word                            '
 end sub
 
 sub procedure play_voice(dim note_nbr as word, dim voice_nbr as word, dim duration as longword)  ' spiele Stimme
+const faktor=two32/32768.0
+dim   MIDI_note as word volatile
+
+    MIDI_note=note_nbr+midi_offset
+    if (MIDI_note>107) or (MIDI_note<12) then exit end if
     note[voice_nbr] = note_nbr                                                 ' Noten-Eintrag in Liste
     s_modulator[voice_nbr] = 0.001                                             ' Startwert für ADSR-Generator
-    sound_offset[voice_nbr]=longword(note_frequency[note_nbr]*two32/32768.0)   ' Frequenz der Note raussuchen
+    sound_offset[voice_nbr]=longword(note_frequency[MIDI_note]*faktor)         ' Frequenz der Note raussuchen
     note_time[voice_nbr] = duration                                            ' Notendauer
     note_counter[voice_nbr]=0                                                  ' Note starten
     phase[voice_nbr]=0                                                         ' ADSR starten
@@ -19190,15 +19226,12 @@ dim svar2 as byte volatile
          case 2
               if midi_key_flag<3 then
                  if svar2=0 then                                               ' 3-Byte Note Off
-                    if (midi_note<109) and (midi_note>11) then
-                       if chanel_count then
-                          if midi_channel_nbr[midi_kanal] < voicemax then
-                             voice_out(midi_channel_nbr[midi_kanal])
-                          end if
-                       else
-                           stop_note(midi_note)
+                    if chanel_count then
+                       if midi_channel_nbr[midi_kanal] < voicemax then
+                          voice_out(midi_channel_nbr[midi_kanal])
                        end if
-                       timecount=0
+                    else
+                        stop_note(midi_note)
                     end if
                  else                                                          ' Note on
                      select case  midi_quadrat
@@ -19206,17 +19239,14 @@ dim svar2 as byte volatile
                        case 1,3,6 velos =(float(svar2 * svar2) / 16130.0) * channel_volume[midi_kanal] * channel_expr[midi_kanal]
                        case 2,4,5 velos = midi_vol_factor[svar2] * channel_volume[midi_kanal] * channel_expr[midi_kanal]
                      end select
-                     if (midi_note<109) and (midi_note>11) then
-                        if chanel_count then
-                           if midi_channel_nbr[midi_kanal] < voicemax then
-                              midi_modulator[midi_channel_nbr[midi_kanal]]=velos
-                              play_voice(midi_note, midi_channel_nbr[midi_kanal], 600000)
-                           end if
-                        else
-                            midi_channel_nbr[midi_kanal]=play_note(midi_note, 600000, velos)
+                     if chanel_count then
+                        if midi_channel_nbr[midi_kanal] < voicemax then
+                           midi_modulator[midi_channel_nbr[midi_kanal]]=velos
+                           play_voice(midi_note, midi_channel_nbr[midi_kanal], 600000)
                         end if
+                     else
+                         midi_channel_nbr[midi_kanal]=play_note(midi_note, 600000, velos)
                      end if
-                     timecount=0
                  end if
               else
                   select case   midi_quadrat
@@ -19233,15 +19263,13 @@ dim svar2 as byte volatile
               if midi_key_flag<3 then
                  midi_note = svar2
                  if midi_key_flag=2 then
-                    midi_byte_nbr=0   timecount=0                              ' 2-Byte Note off
-                    if (midi_note<109) and (midi_note>11) then
-                       if chanel_count then
-                          if midi_channel_nbr[midi_kanal] < voicemax then
-                             voice_out(midi_channel_nbr[midi_kanal])
-                          end if
-                       else
-                           stop_note(midi_note)
+                    midi_byte_nbr=0                                            ' 2-Byte Note off
+                    if chanel_count then
+                       if midi_channel_nbr[midi_kanal] < voicemax then
+                          voice_out(midi_channel_nbr[midi_kanal])
                        end if
+                    else
+                        stop_note(midi_note)
                     end if
                  else
                      midi_byte_nbr=2
@@ -19351,7 +19379,7 @@ dim record_buffer  as byte[1024] volatile
     RCC_APB1ENR.TIM7EN=0                                                       '    "
     sound_init=0                                                               ' Klangerzeugung aus
     NVIC_SetIntPriority(IVT_INT_TIM3,86)                                       ' SystemTimer veringerte Priority
-    EOCIE_ADC2_CR1_bit=1   clear_com0_pointer   filen=0                              ' adc2 Interrupt einschalten
+    EOCIE_ADC2_CR1_bit=1   clear_com0_pointer   filen=0                        ' adc2 Interrupt einschalten
     InitTimer12(sample_rate)   T_CS=1   TFT_CS=1   spi2_speed(4)               ' Sample-Timer starten, Touch aus, SPI-Speed erhöhen für Aufzeichnung
     while ser_zeiger=0                                                         ' bis Taste gedrückt
           IWDG_KR=0xAAAA
@@ -19684,38 +19712,104 @@ dim   play_buffer                                          as byte[buffer_size] 
     clear_com0_pointer
 end sub
 
+sub procedure MP3_Init
+
+    BSYNC = 1
+    MP3_CS = 1
+
+    ' Hardware reset
+    MP3_RST = 0
+    Delay_ms(10)
+    MP3_RST = 1
+
+    while (DREQ = 0)  wend
+
+    MP3_SCI_Write(SCI_MODE_ADDR, 0x0800)
+    MP3_SCI_Write(SCI_BASS_ADDR, 0x7A00)
+    MP3_SCI_Write(SCI_CLOCKF_ADDR, 0xC000)   ' default 12 288 000 Hz
+
+    ' Maximum volume is 0x00 and total silence is 0xFE.
+    'volume_left  = 0 '0x3F
+    'volume_right = 0 '0x3F
+    MP3_Set_Volume(0, 0)
+end sub
+
+sub function play_VS1053(dim handle as short) as short
+dim file_size   as longword     volatile
+dim file_type   as longword     volatile
+dim ferror      as integer      volatile
+dim i           as word         volatile
+dim file_buffer as byte[1024]   volatile
+
+    if perror then exit end if
+    result=handle
+    if handle<0 then  perror=19  sys(filenotopen,0)   exit end if  ' Fehler beim Öffnen
+    int2_off   FAT32_Size(@pstr, @file_size)  int2_on
+
+    file_type=l_resultat
+    ' send file blocks to MP3 SDI
+      while (file_size > 1024)
+            int2_off   ferror=FAT32_Read(handle,@file_buffer,1024)  int2_on
+            if ferror<0 then  perror=19  sys(filehandler,0)   pr(handle,5)  con(32)  pr(FAT32_GetError,5) exit end if
+
+            for i = 0 to 1024/32 -1
+                MP3_SDI_Write_32(@file_buffer + i*32)
+            next i
+
+        file_size = file_size - 1024
+      wend
+
+      ' send the rest of the file to MP3 SDI
+      int2_off   ferror=FAT32_Read(handle,@file_buffer,file_size)  int2_on
+      if ferror<0 then  perror=19  sys(filehandler,0)   pr(handle,5)  con(32)  pr(FAT32_GetError,5) exit end if
+
+      for i = 0 to file_size - 1
+        MP3_SDI_Write(file_buffer[i])
+      next i
+      
+      spi2_speed(TFT_SPI_Speed)
+    int2_off   ferror=FAT32_Close(handle)   int2_on
+    int2_off   ferror=FAT32_GetError        int2_on
+end sub
+
 sub procedure instr_play                                                       ' Anweisung play    2Bytes!!!
 const Read_Mode=0
 const Wave_Mode=6
+const Get_Mode=99
 const Midi_Off=0
 const Midi_On=1
-dim   n, anzahlparas, voicenr, mwresultat as word  volatile
-      notetm                              as longword volatile
-      calcf, smpl                         as float volatile
+dim n, anzahlparas, voicenr, mwresultat as word     volatile
+    notetm, ml_resultat                 as longword volatile
+    calcf, smpl                         as float    volatile
       
-    if is_any_str(2) then
-       if int_marker then  exit end if
-       NVIC_IntDisable(IVT_INT_TIM8_UP_TIM13)  CEN_TIM13_CR1_bit=0             ' dds off
-       NVIC_IntDisable(IVT_INT_TIM4)                                           ' Soundgenerator off
-       RCC_APB1ENR.TIM4EN=0
-       NVIC_IntDisable(IVT_INT_TIM7)                                           ' Hüllkurve aus
-       RCC_APB1ENR.TIM7EN=0
-       sound_init=0                                                            ' Klangerzeugung aus, melden
-       mwresultat=w_resultat   w_resultat=0   anzahlparas=0
-       n=position(2, 44,0)                                                     ' Komma suchen
-       if n then  anzahlparas = get_parameters(n) end if
-       select case anzahlparas
-         case 0    voicenr=Midi_Off       smpl=1.0
-         case 1    voicenr=word(para[0])  smpl=1.0
-         case else voicenr=Midi_Off       smpl=par[1]
-       end select
-       if voicenr>16 then  perror=13 exit end if
-       if play_wav(SD_Open_File_for_read_write(2, Wave_Mode, Read_Mode), voicenr, smpl)<0 then  perror=19 exit end if
-       w_resultat=mwresultat
+    if is_any_str(2) then                                                      ' ab hier play file -------------------------------------------
+       mwresultat=w_resultat  w_resultat=0  ml_resultat=l_resultat  l_resultat=0
+       if soundcard then
+          if play_vs1053(SD_Open_File_for_read_write(2, Get_Mode, Read_Mode) ) <0 then  perror=19 exit end if
+       else
+           if int_marker then  exit end if
+           NVIC_IntDisable(IVT_INT_TIM8_UP_TIM13)  CEN_TIM13_CR1_bit=0         ' dds off
+           NVIC_IntDisable(IVT_INT_TIM4)                                       ' Soundgenerator off
+           RCC_APB1ENR.TIM4EN=0
+           NVIC_IntDisable(IVT_INT_TIM7)                                       ' Hüllkurve aus
+           RCC_APB1ENR.TIM7EN=0
+           sound_init=0                                                        ' Klangerzeugung aus, melden
+           anzahlparas=0
+           n=komma(2)                                                          ' Komma suchen
+           if n then  anzahlparas = get_parameters(n) end if
+           select case anzahlparas
+             case 0    voicenr=Midi_Off       smpl=1.0                         ' voicenr nimmt den Wert MIDI-Kanal
+             case 1    voicenr=word(para[0])  smpl=1.0
+             case else voicenr=Midi_Off       smpl=par[1]                      ' zuviele Parameter ignorieren
+           end select
+           if voicenr>16 then  perror=13 exit end if                           ' MIDI-Kanal
+           if play_wav(SD_Open_File_for_read_write(2, Wave_Mode, Read_Mode), voicenr, smpl)<0 then  perror=19 exit end if
+       end if
+       w_resultat=mwresultat   l_resultat=ml_resultat
        exit                                                                    ' play wave fertig
     end if
-    
-    if sound_init=0 then  perror=19  sys(nosound,0)  exit  end if              ' ab hier play sound --------------------------------------------------------------
+'________________________________________________________________________________________________________________________________________
+    if sound_init=0 then  perror=19  sys(nosound,0)  exit  end if              ' ab hier play sound
     anzahlparas = get_parameters(2)
     if (anzahlparas>12) or (anzahlparas=0) or (anzahlparas mod 2) then  perror=21 exit end if
     if audio_on then  NVIC_IntDisable(IVT_INT_TIM8_UP_TIM13)  CEN_TIM13_CR1_bit=0   end if             ' dds off
@@ -20446,8 +20540,8 @@ dim k as ^char     volatile
 
     k = prog_mem  result = true
     while k < (progend -2)                                                     ' Zeile suchen
-          if bpointer(k +4) = 130 then                                         ' Extender3 ?
-             if bpointer(k +5) = token then                                    '   4 für function,   5 für sub,   6 für proc
+          if bpointer(k +4) = 130 then                                         ' Extender 3 ?
+             if bpointer(k +5) = token then                                    ' token:  4 für function,   5 für sub,   6 für proc
                 if bpointer(k +6) = progline[pos2] then
                    l=1
                    while (bpointer(k + l + 6) >1) and (progline[l + pos2] >0) and  (bpointer(k + l +6) = progline[l + pos2])
@@ -20510,7 +20604,7 @@ sub procedure instr_user
 end sub
 '#endif
 
-sub procedure copy_paras_to_args
+sub procedure copy_paras_to_args                                               ' Parameter in Argumente übertragen
 dim n as word volatile
 
     for n=0 to argmax -1
@@ -20529,7 +20623,7 @@ dim lineadr as ^byte volatile
        if perror then  exit  end if                                            ' nicht gefunden - fertig!
        execute_prog(lineadr, progend-3)                                        ' Routine starten
     else                                                                       ' sub / function
-        func_var_res=0.0    varstr[9]=""
+        func_var_res=0.0    varstr[9]=""                                       ' num. & String-Resultat
         procedure_call                                                         ' call übernimmt
         cwtnl("function value num: ")  prx(func_var_res)   cwtnl("function value str: ")   cwt(varstr[9])
         pmode=0   task_nr=0                                                    ' wieder Direktmodus
@@ -20605,7 +20699,7 @@ dim c,d,k,l,m,n  as  word     volatile
        else                                                                    ' start call
            l=5                                                                 ' Anfang der Arumenteliste im Listing suchen
            while listline[actual_line][l] <> "("                                            '    "
-                 if listline[actual_line][l] = 0 then  exit end if                          ' keine Argumente-Klammer im Listing
+                 if listline[actual_line][l] = 0 then  exit end if             ' keine Argumente-Klammer im Listing
                  inc(l)   'con(listline[l])
            wend
            inc(l)                                                              ' hinter Klammer
@@ -20737,8 +20831,8 @@ dim   pos, labellen as word     volatile
     lbl = get_label_adress(2, func_token, labellen)    'prn(pos -3)            ' func
     if perror then sys(lbl_not_found,0) exit end if
     if get_parameters(pos+2) = 0 then  perror=2  sys("Function Nbr. Missing",0)  exit end if
-    if (para[0] > funcmax) or (para[0] < 1) then  perror=13  sys("Function Number 1-5?? ",0) pr(para[0],5) exit end if   ' fn1...fn5
-    proc_func_adr[para[0] -1] = lbl                                  ' Funktionsadresse speichern
+    if (para[0] > (funcmax-1)) or (para[0] < 1) then  perror=13  sys("Function Number 1-5?? ",0) pr(para[0],5) exit end if   ' fn1...fn5
+    proc_func_adr[para[0] -1] = lbl                                            ' Funktionsadresse speichern
 end sub
 
 sub procedure int_helper(dim int_nr as word)                                   ' Interrupt Helfer ( für instr_startx() )
@@ -20867,7 +20961,7 @@ sub procedure proc_func_helper(dim proc_func_nr as longword)                   '
     mcalcstack = calcstack
     mifstack   = ifstack
     mselstack  = selstack
-    mdptr = dptr  dptr=0     'con("#")  prn(proc_func_adr[proc_func_nr])  prn(proc_func_nr)
+    mdptr = dptr  dptr=0
     if proc_func_adr[proc_func_nr]=0 then  perror=22  exit end if
     if (gostack < loopdepth) and (calcstack < loopdepth) then
        inc(calcstack)
@@ -20905,7 +20999,7 @@ sub procedure proc_func_helper(dim proc_func_nr as longword)                   '
     next n
     mprog_nr = prog_nr
     prog_nr  = proc_func_nr
-execute_prog(proc_func_adr[proc_func_nr], progend -3)                                      ' procx aufrufen
+execute_prog(proc_func_adr[proc_func_nr], progend -3)                          ' procx aufrufen
     prog_nr  = mprog_nr
     for n=0 to 9                                                               ' globale Variablen wieder herstellen
         varfloat[n] = varfloat2[n]                                             ' Variablen wieder erstellen
@@ -20966,22 +21060,22 @@ end sub
 sub procedure procedure_call                                                   ' 2-Bytes!!
 const func_token=4
       sub_token=5
+      no_function1=5                                                           ' nicht Funktion Typ 1
 dim   m, n, labellen as word volatile
 
     m = position(2, "{", 0)
-    'k = 5
     if m then                                                                  ' Klammer?-------------------------------->
        labellen = m -3
        if (labellen<2) or (labellen>16) then  perror=2   sys(lbl_name_len,0) exit end if
        n = get_arguments(m)                                                    ' Argumente holen
        if perror then  exit end if
-       proc_merker[5] = mcontadres + m
+       proc_merker[no_function1] = mcontadres + m
     else                                                                       ' keine Klammer, keine Argumente---------->
         labellen = length(progline) -2
         if (labellen<2) or (labellen>16) then  perror=2  sys(lbl_name_len,0) exit end if
-        proc_merker[5]=0    clear_args
+        proc_merker[no_function1]=0    clear_args
     end if                                                                     ' ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    proc_func_adr[5] = get_label_adress(2, sub_token, labellen)                ' sub suchen
+    proc_func_adr[no_function1] = get_label_adress(2, sub_token, labellen)     ' sub suchen
     if perror then                                                             ' nicht gefunden?
        perror=0
        if (progline[1]=30) or (progline[1]=18) then                            ' nicht für rcall
@@ -20990,10 +21084,10 @@ dim   m, n, labellen as word volatile
              exit
           end if
        end if
-       proc_func_adr[5] = get_label_adress(2, func_token, labellen)            ' nein? -> Funktion im Programm suchen
+       proc_func_adr[no_function1] = get_label_adress(2, func_token, labellen) ' nein? -> Funktion Typ2 im Programm suchen
        if perror then  sys(lbl_not_found,0)  exit end if                       ' auch nicht gefunden? dann aber Fehler!
     end if
-    proc_func_helper(5)
+    proc_func_helper(no_function1)
 end sub
 
 sub procedure instr_call
@@ -22043,10 +22137,10 @@ dim test as longword volatile
 
     set_active_spi_ser_flash
     int2_off  test = sf_id()  int2_on
-    sf_flag=1
+    sf_flag=1   eeprom=0
     select case        test
       case 15679509    sf_prgz=32  sys("found ser. Flash 2MByte",0)            ' W25Q16  2M Flash
-      case 2097174     sf_prgz=64  sys("found ser. EEPROM 4MByte",0)           ' M95P32  4M EPROM
+      case 2097174     sf_prgz=64  sys("found ser. EEPROM 4MByte",0)  eeprom=1 ' M95P32  4M EPROM
       case 15679510    sf_prgz=64  sys("found ser. Flash 4MByte",0)            ' W25Q32  4M Flash     ???? geraten
       case 15679511    sf_prgz=128 sys("found ser. Flash 8MByte",0)            ' W25Q64  8M Flash
       case 0,16777215  sf_flag=0   sys("no Flash Chip",0)
@@ -25143,14 +25237,8 @@ const Print_Mode=2
     if cret_sup_flag=0 then
        if lcd=0 then
           cnl
-          'if TFT_SCM then                                                      ' Korrigiert einen Fehler in der Scroll-Routine, der sich hier bemerkbar macht
-'             if TFT_Scroll_Cnt=1 then  cnl end if
-'          end if
        else
            unl
-           'if TFT_SCM then                                                     ' Korrigiert einen Fehler in der Scroll-Routine, der sich hier bemerkbar macht
-'              if TFT_Scroll_Cnt=1 then  unl end if
-'           end if
        end if
     end if
     print_text
@@ -27826,11 +27914,13 @@ dim error            as short    volatile
     if progline[2] = "#" then                                                  ' Dateizeiger?
        anzl = get_parameters(3)
        lange = word(para[0])                                                   ' Filehandler
-       if (lange<10) or (lange>24) then  perror=13  sys(wrong_int,0) exit end if
-       if anzl=1 then  seekpos=0   else  seekpos = longword(par[1])       end if
+       if (lange<10) or (lange>24)   then  perror=13  sys(wrong_int,0) exit end if
+       if anzl=1 then  seekpos=0     else  seekpos = longword(par[1])       end if
        if lange<21 then                                                        ' serielles Flash/EEPROM
-          if dat_nr[lange -10] = 0 then  perror=25 exit end if                 ' Datei vorhanden?
-          if file_modus[lange -10] then  perror=26 exit end if                 ' LeseModus?
+          if dat_nr[lange -10] = 0   then  perror=25 exit end if               ' Datei nicht vorhanden?
+          if eeprom=0 then                                                     ' Flash?
+            if file_modus[lange -10] then  perror=26 exit end if               ' SchreibModus?
+          end if
           s_adr = dat_nr[lange -10] <<16
           set_active_spi_ser_flash
           m_adr = (sf_read_byte(s_adr +0) <<8) + sf_read_byte(s_adr +1)
@@ -28610,6 +28700,8 @@ end sub
 
 
 main:                                                                          ' Hauptprogramm Warmstart vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+
 init_hardware  delay15   clear_all   clear_prog                                ' Hardware initialisieren, "new" ausführen
 sys(versionmeldung,0)                                                          ' Startmeldung auf Konsole ausgeben
 if konsole_uart<7 then

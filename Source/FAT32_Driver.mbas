@@ -1,0 +1,313 @@
+module __Lib_FAT32_Driver_STM32_M3_M4_M7
+include __Lib_Stdint
+
+include __Lib_FAT32_Types_STM32_M3_M4_M7
+include __Lib_FAT32_Defs_STM32_M3_M4_M7
+
+sub function FAT32_Dev_Init() as int8_t
+sub function FAT32_Dev_Read_Sector(dim sc as __SECTOR, dim buf as ^char) as int8_t
+sub function FAT32_Dev_Write_Sector(dim sc as __SECTOR, dim buf as ^char) as int8_t
+sub function FAT32_Dev_SectorCount(dim scCnt as ^uint32_t) as int8_t
+sub function FAT32_Dev_Multi_Read_Stop() as int8_t
+sub function FAT32_Dev_Multi_Read_Sector(dim buf as ^byte) as int8_t
+sub function FAT32_Dev_Multi_Read_Start(dim sc as __SECTOR) as int8_t
+sub function FAT32_Put_Char(dim ch as uint8_t) as int8_t
+sub procedure uart(dim char_byte as byte)  external
+
+implements
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  These functions are wrappers for hardware specific functions.
+''
+''  The intention is to write the library in such a way it can be
+''  independent of the type of storage device.
+''
+''  User may modify these functions if required, but return values
+''  and conditions should remain as stated in function descriptions.
+''
+''  Only SD'MMC cards are supported at this moment. More will come.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  Dev_Init() is a wrapper for initialization of the storage device.
+''
+''  It must return Returns OK on success and ERROR on failure.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+sub function FAT32_Dev_Init() as int8_t
+    if (Mmc_Init() <> OK_F32) then
+        result = ERROR_F32
+    else
+        result = OK_F32
+    end if
+end sub
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  Dev_Read_Sector() a wrapper for read opeartions on the storage device.
+''
+''  It is used to read the contents of sector sc from the storage device
+''  into the buffer buf.
+''
+''  It must return Returns OK on success and ERROR on failure.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+sub function FAT32_Dev_Read_Sector(dim sc as __SECTOR, dim buf as ^char) as int8_t
+    if (Mmc_Read_Sector(sc, buf) <> OK_F32) then
+        result = ERROR_F32
+    else
+        result = OK_F32
+    end if
+end sub
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  Dev_Write_Sector() is a wrapper for read operations on the storage device.
+''
+''  It is used to write the contents of buffer buf into the sector sc on the
+''  storage device.
+''
+''  It must return Returns OK on success and ERROR on failure.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+sub function FAT32_Dev_Write_Sector(dim sc as __SECTOR, dim buf as ^char) as int8_t
+    if (Mmc_Write_Sector(sc, buf) <> OK_F32) then
+        result = ERROR_F32
+    else
+        result = OK_F32
+    end if
+end sub
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  Dev_Size() is a wrapper for retrieving number of sector device implements.
+''
+''  It is used to get sector count of the device (for fat formatting purpose,
+''  assumed sector size is 512 bytes).
+''
+''  Enter your code for retrieving device size.
+''
+''  It must return Returns OK on success and ERROR on failure.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+sub function FAT32_Dev_SectorCount(dim scCnt as ^uint32_t) as int8_t
+    dim csdbuf as uint8_t[16] volatile
+    dim c_size, c_size_mult, mult,
+        read_bl_len, block_len as uint16_t volatile
+    dim size, blocknr as uint32_t volatile
+
+    ' determine MMC/SD card size in MB
+    if (Mmc_Read_Csd(csdbuf) <> OK_F32) then
+        result = ERROR_F32
+        exit
+    end if
+
+    ' is it version 2.0?
+    if (1 = ((csdbuf[0] and 0xC0) >> 6)) then
+        size = 0                             size = size << 8
+        size = size + (csdbuf[7] and 0x3F)   size = size << 8
+        size = size + csdbuf[8]              size = size << 8
+        size = size + csdbuf[9]              size = size << 0
+
+        ' size is in 0.5MB, get size in sectors (assumed 512 bytes sector size)
+        size = size * 1024
+    ' if not, it's version 1.xx
+    else
+        c_size      = ((csdbuf[8] and 0xC0) >> 6) +
+                      (uint16_t(csdbuf[7]) << 2) +
+                      ((uint16_t(csdbuf[6]) and 0x03) << 10)
+        c_size_mult = (csdbuf[10] and 0x80) +
+                      ((uint16_t(csdbuf[9]) and 0x03) << 8)
+        c_size_mult = c_size_mult >> 7
+
+        read_bl_len = csdbuf[5] and 0x0f
+
+        mult = 1
+        mult = mult << (c_size_mult + 2)
+
+        blocknr   = (c_size + 1) * uint32_t(mult)
+        block_len = 1
+        block_len = block_len << read_bl_len
+
+        size = block_len * blocknr
+
+        ' size is in 1B, get size in sectors (assumed 512 bytes sector size)
+        size = size div 512
+    end if
+
+    scCnt^ = size
+
+    result = OK_F32
+end sub
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  Multi sector read is MMC/SD card feature which enables you to read
+''  any number of consecutive sectors starting from specified sector.
+''  Multi sector read algorithm:
+''    1. Issue start command with start sector number.
+''       Device will enter Multi sector read mode.
+''    2. Read n sectors...
+''    3. Issue stop command when done reading.
+''       Device will exit Multi sector read and enter idle mode.
+''
+''  If your device does not support or you don't want to use this feature
+''  comment MULTI_SECTOR_READ define below.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+#define MULTI_SECTOR_READ
+#ifdef MULTI_SECTOR_READ
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  Dev_Multi_Read_Star() a wrapper for multi read start operation (if any) on
+''  the storage device.
+''
+''  It is used to intiate multi read operation starting from sector sc
+''  on the storage device.
+''
+''  It must return Returns OK on success and ERROR on failure.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+sub function FAT32_Dev_Multi_Read_Start(dim sc as __SECTOR) as int8_t
+
+    if (Mmc_Multi_Read_Start(sc) <> OK_F32) then
+        result = ERROR_F32
+    else
+        result = OK_F32
+    end if
+end sub
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  Dev_Multi_Read_Stop() a wrapper for multi read stop operation (if any) on
+''  the storage device.
+''
+''  It is used to stop multi read operation on the storage device.
+''
+''  It must return Returns OK on success and ERROR on failure.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+sub function FAT32_Dev_Multi_Read_Stop() as int8_t
+
+    if (Mmc_Multi_Read_Stop() <> OK_F32) then
+        result = ERROR_F32
+    else
+        result = OK_F32
+    end if
+end sub
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  Dev_Multi_Read_Sector() a wrapper for sector read operation in
+''  'multi sector read' storage device (if any).
+''
+''  It is used to read the contents of next sector from the storage device
+''  into the buffer buf.
+''
+''  It must return Returns OK on success and ERROR on failure.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+sub function FAT32_Dev_Multi_Read_Sector(dim buf as ^byte) as int8_t
+
+    Mmc_Multi_Read_Sector(buf)
+    result = OK_F32
+end sub
+#else
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''  override multi sector read routines for devices which do not have this feature
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+dim __sc as __SECTOR
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  Dev_Multi_Read_Star() a wrapper for multi read start operation (if any) on
+''  the storage device.
+''
+''  It is used to intiate multi read operation starting from sector sc
+''  on the storage device.
+''
+''  It must return Returns OK on success and ERROR on failure.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+sub function FAT32_Dev_Multi_Read_Start(sc as __SECTOR) as int8_t
+
+    __sc = sc
+    result = OK_F32
+end sub
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  Dev_Multi_Read_Stop() a wrapper for multi read stop operation (if any) on
+''  the storage device.
+''
+''  It is used to stop multi read operation on the storage device.
+''
+''  It must return Returns OK on success and ERROR on failure.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+sub function FAT32_Dev_Multi_Read_Stop() as int8_t
+
+    result = OK_F32
+end sub
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  Dev_Multi_Read_Sector() a wrapper for sector read operation in
+''  'multi sector read' storage device (if any).
+''
+''  It is used to read the contents of next sector from the storage device
+''  into the buffer buf.
+''
+''  It must return Returns OK on success and ERROR on failure.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+sub function FAT32_Dev_Multi_Read_Sector(buf as ^byte) as int8_t
+
+    result = FAT32_Dev_Read_Sector(__sc, buf)
+    Inc(__sc)
+end sub
+#endif
+
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  Dev_PutChar() is used by FAT32_Dir function for printing the contents
+''  of the current folder, which is done 1 character at the time.
+''
+''  User may change this function to reroute that on some other device,
+''  GLCD, TFT, Flash, EEPROM, or Ethernet module, to name a few.
+''
+''  It must return Returns OK on success and ERROR on failure.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+sub function FAT32_Put_Char(dim ch as byte) as int8_t
+    'UART_Write(ch)
+    'con(ch)
+	uart(ch)
+    result = OK_F32
+end sub
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+''
+''  Dev_GetChar() is currently not required by any FAT32 function.
+''
+''  It is just considered useful to have it for future extensions.
+''
+''  It must return Returns OK on success and ERROR on failure.
+''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+sub function FAT32_Get_Char(dim ch as ^char) as int8_t
+    if (1 = UART_Data_Ready()) then
+        ch^ = UART_Read()
+        result = OK_F32
+    end if
+    result = -1
+    exit
+end sub
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+end.

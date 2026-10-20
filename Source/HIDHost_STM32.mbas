@@ -1,0 +1,358 @@
+module HIDHost
+
+'///////////////////////////////////////////////////////////////////////////////
+' Declarations of public constants
+
+const _USB_HOST_HID_DEVICE_NONE as byte  = 0
+const _USB_HOST_HID_DEVICE_MOUSE as byte = 1
+const _USB_HOST_HID_DEVICE_KEYB as byte  = 2
+
+'///////////////////////////////////////////////////////////////////////////////
+' Declarations of public vars
+
+' HID callbacks
+typedef TDeviceInit     as procedure ()
+typedef TReportReceived as procedure (dim rptData as ^byte)
+
+structure TUSBHostHIDHandler
+  dim DeviceInit as ^TDeviceInit
+  dim ReportReceived as ^TReportReceived
+end structure
+
+dim USBHost_HIDHandlerPtr as ^TUSBHostHIDHandler external
+
+'///////////////////////////////////////////////////////////////////////////////
+' Declarations of public functions
+
+sub function USBHost_HIDClassInitIntf()  as byte
+sub function USBHost_HIDClassRequests()  as byte
+sub function USBHost_HIDClassOperation() as byte
+sub function USBHost_HIDGetDeviceType()  as byte
+sub procedure USBHost_HIDInit()
+
+implements
+
+'///////////////////////////////////////////////////////////////////////////////
+'// Typedefs
+
+structure TUSBSetupReq
+    dim bmRequest as byte
+    dim bRequest as byte
+    dim wValue as word
+    dim wIndex as word
+    dim wLength as word
+end structure
+
+structure TUSBDeviceDsc
+  dim bLength as byte
+  dim bDescriptorType as byte
+  dim bcdUSB as word
+  dim bDeviceClass as byte
+  dim bDeviceSubClass as byte
+  dim bDeviceProtocol as byte
+  dim bMaxPacketSize as byte
+  dim idVendor as word
+  dim idProduct as word
+  dim bcdDevice as word
+  dim iManufacturer as byte
+  dim iProduct as byte
+  dim iSerialNumber as byte
+  dim bNumConfigurations as byte
+end structure
+
+structure TUSBConfigDsc
+  dim bLength as byte
+  dim bDescriptorType as byte
+  dim wTotalLength as word
+  dim bNumInterfaces as byte
+  dim bConfigurationValue as byte
+  dim iConfiguration as byte
+  dim bmAttributes as byte
+  dim bMaxPower as byte
+end structure
+
+structure TUSBInterfaceDsc
+  dim bLength as byte
+  dim bDescriptorType as byte
+  dim bInterfaceNumber as byte
+  dim bAlternateSetting as byte
+  dim bNumEndpoints as byte
+  dim bInterfaceClass as byte
+  dim bInterfaceSubClass as byte
+  dim bInterfaceProtocol as byte
+  dim iInterface as byte
+end structure
+
+structure TUSBEndpointDsc
+  dim bLength as byte
+  dim bDescriptorType as byte
+  dim bEndpointAddress as byte
+  dim bmAttributes as byte
+  dim wMaxPacketSize as word
+  dim bInterval as byte
+end structure
+
+
+structure TUSBHostHIDDesc
+  dim bLength as byte ' Size of the descriptor
+  dim bDescriptorType as byte ' Type of descriptor
+  dim bcdHID as word ' HID version number
+  dim bCountryCode as byte ' Country code
+  dim bNumDescriptors as byte ' Number of descriptors
+  dim bReportDescriptorType as byte ' Descriptor type
+  dim wItemLength as word ' Length of the descriptor
+end structure
+
+
+
+'///////////////////////////////////////////////////////////////////////////////
+
+'//Constants
+const _USB_HOST_HID_MIN_POLLING_INTERVAL as byte = 10
+
+const _USB_HOST_HID_CFG_INDX             as byte = 0 ' current configuration supported
+const _USB_HOST_HID_INTF_INDX            as byte = 0 ' interface index supported
+
+const _USB_HOST_HID_DESC_TYPE_HID        as byte = 0x21 ' HID descriptor type
+const _USB_HOST_HID_DESC_TYPE_REPORT     as byte = 0x22 ' HID Report descriptor type
+
+' Interface Descriptor field values for HID Boot Protocol
+const _USB_HOST_HID_BOOT_CODE           as byte = 0x01
+const _USB_HOST_HID_KEYBRD_BOOT_CODE    as byte = 0x01
+const _USB_HOST_HID_MOUSE_BOOT_CODE     as byte = 0x02
+
+const _USB_HOST_HID_REQ_GET_HID_DESC    as byte = 0
+const _USB_HOST_HID_REQ_GET_REPORT_DESC as byte = 1
+const _USB_HOST_HID_REQ_SET_IDLE        as byte = 2
+const _USB_HOST_HID_REQ_SET_PROTOCOL    as byte = 3
+
+const _HID_STATE_IDLE     as byte = 0
+const _HID_STATE_SYNC     as byte = 1
+const _HID_STATE_GET_DATA as byte = 2
+const _HID_STATE_POLL     as byte = 3
+
+'// Variables
+dim hidInEPNum as byte
+dim hidInEPAddress as byte
+
+dim HIDMaxPacketSize as word
+dim HIDbInterval as byte
+dim HIDTimer as longword
+dim hidClassOperationState as byte
+dim hidClassReqState as byte
+dim hidDsc as TUSBHostHIDDesc
+dim HIDBuffer as byte[64]  '[512]                                              ' von mir
+dim hidDeviceType as byte
+
+dim doneFlag as byte                                                           ' von mir
+
+'///////////////////////////////////////////////////////////////////////////////
+'///////////////////////////////////////////////////////////////////////////////
+'///////////////////////////////////////////////////////////////////////////////
+
+sub function USBHost_HIDClassInitIntf() as byte
+  dim i        as  byte             volatile
+      intfDesc as ^TUSBInterfaceDsc volatile
+      epDesc   as ^TUSBEndpointDsc  volatile
+                        
+      while intfDesc^.bInterfaceSubClass <> _USB_HOST_HID_BOOT_CODE            ' von mir
+            intfDesc = USBHost_GetInterfaceDescriptor(_USB_HOST_HID_CFG_INDX)  ' Original
+            delay_us(10)                                                       ' von mir
+      wend                                                                     ' von mir                                                                                                                                                                                                     ' von mir
+
+  'if intfDesc^.bInterfaceSubClass = _USB_HOST_HID_BOOT_CODE then              ' Original
+
+    'if intfDesc^.bInterfaceProtocol = _USB_HOST_HID_MOUSE_BOOT_CODE then      ' Original
+      'hidDeviceType = _USB_HOST_HID_DEVICE_MOUSE                              ' Original
+    'else                                                                      ' Original
+      'if intfDesc^.bInterfaceProtocol = _USB_HOST_HID_KEYBRD_BOOT_CODE then   ' Original
+         'hidDeviceType = _USB_HOST_HID_DEVICE_KEYB                            ' Original
+      'end if                                                                  ' Original
+    'end if                                                                    ' Original
+
+    intfDesc^.bInterfaceProtocol = _USB_HOST_HID_KEYBRD_BOOT_CODE              ' von mir
+    hidDeviceType = _USB_HOST_HID_DEVICE_KEYB                                  ' von mir
+                
+    for i = 0 to (intfDesc^.bNumEndpoints - 1)
+      epDesc = USBHost_GetEpDescriptor(_USB_HOST_HID_INTF_INDX, i)
+      if (epDesc^.bEndpointAddress and 0x80) >> 7 then
+        USBHost_InitEp(epDesc)
+        HIDMaxPacketSize = epDesc^.wMaxPacketSize
+        hidInEPAddress = epDesc^.bEndpointAddress
+        hidInEPNum = hidInEPAddress and 0xF
+        HIDbInterval = epDesc^.bInterval
+        if HIDbInterval < _USB_HOST_HID_MIN_POLLING_INTERVAL then
+           HIDbInterval = _USB_HOST_HID_MIN_POLLING_INTERVAL
+        end if                                                                                                                                                                                                                               ' von mir
+      end if
+    next i
+    
+  'else                                                                        ' <- Original
+    ' Device not supported                                                     ' <- Original
+    'hidDeviceType = _USB_HOST_HID_DEVICE_NONE                                 ' <- Original
+    'result = _USB_HOST_CLASS_STATUS_ERROR                                     ' <- Original
+    'exit                                                                      ' <- Original                                                                                          ' <- Original
+  'end if                                                                      ' <- Original
+  hidClassOperationState = _HID_STATE_IDLE
+  hidClassReqState = _USB_HOST_HID_REQ_GET_HID_DESC
+  result = _USB_HOST_CLASS_STATUS_OK
+end sub
+
+'///////////////////////////////////////////////////////////////////////////////
+'///////////////////////////////////////////////////////////////////////////////
+'///////////////////////////////////////////////////////////////////////////////
+
+sub function USBHost_HIDClassRequests() as byte
+dim status, i as byte      volatile
+    setup as TUSBSetupReq         volatile
+
+  status = 1
+
+  select case (hidClassReqState)
+    case _USB_HOST_HID_REQ_GET_HID_DESC
+      setup.bmRequest = _USB_HOST_SETUP_REQ_DIR_D2H or _USB_HOST_SETUP_REQ_RECIPIENT_INTERFACE
+      setup.bRequest = _USB_HOST_SETUP_REQUEST_GET_DESCRIPTOR
+      setup.wValue = 0x2100
+      setup.wIndex = 0
+      setup.wLength = 0x09
+      if(USBHost_ControlTransfer(@setup, @HIDBuffer) = _USB_HOST_TRANSACTION_DONE) then
+        hidDsc.bLength = HIDBuffer[0]
+        hidDsc.bDescriptorType = HIDBuffer[1]
+        hidDsc.bcdHID = HIDBuffer[2] + (word(HIDBuffer[3]) << 8)
+        hidDsc.bCountryCode = HIDBuffer[4]
+        hidDsc.bNumDescriptors = HIDBuffer[5]
+        hidDsc.bReportDescriptorType = HIDBuffer[6]
+        hidDsc.wItemLength = HIDBuffer[7] + (word(HIDBuffer[8]) << 8)
+        hidClassReqState = _USB_HOST_HID_REQ_GET_REPORT_DESC
+      end if
+
+    case _USB_HOST_HID_REQ_GET_REPORT_DESC
+      setup.bmRequest = _USB_HOST_SETUP_REQ_DIR_D2H or _USB_HOST_SETUP_REQ_RECIPIENT_INTERFACE
+      setup.bRequest = _USB_HOST_SETUP_REQUEST_GET_DESCRIPTOR
+      setup.wValue = 0x2200
+      setup.wIndex = 0
+      setup.wLength = hidDsc.wItemLength
+      if USBHost_ControlTransfer(@setup, @HIDBuffer) = _USB_HOST_TRANSACTION_DONE then
+        hidClassReqState = _USB_HOST_HID_REQ_SET_IDLE
+      end if
+
+    case _USB_HOST_HID_REQ_SET_IDLE
+      setup.bmRequest = _USB_HOST_SETUP_REQ_DIR_H2D or _USB_HOST_SETUP_REQ_RECIPIENT_INTERFACE or _USB_HOST_SETUP_REQ_TYPE_CLASS
+      setup.bRequest = 0x0A
+      setup.wValue = 0 ' indefinite duration on all reports
+      setup.wIndex = 0
+      setup.wLength = 0
+
+      status = USBHost_ControlTransfer(@setup, 0)
+      if(status = _USB_HOST_TRANSACTION_DONE) then
+        hidClassReqState = _USB_HOST_HID_REQ_SET_PROTOCOL
+      else
+        if status = _USB_HOST_TRANSACTION_STALL then
+          hidClassReqState = _USB_HOST_HID_REQ_SET_PROTOCOL
+        end if
+      end if
+
+    case _USB_HOST_HID_REQ_SET_PROTOCOL
+      setup.bmRequest = _USB_HOST_SETUP_REQ_DIR_H2D or _USB_HOST_SETUP_REQ_RECIPIENT_INTERFACE or _USB_HOST_SETUP_REQ_TYPE_CLASS
+      setup.bRequest = 0x0B
+      setup.wValue = 1 ' 0 = Boot Protocol, 1 = Report Protocol
+      setup.wIndex = 0
+      setup.wLength = 0
+
+      if USBHost_ControlTransfer(@setup, 0) = _USB_HOST_TRANSACTION_DONE then
+        hidClassReqState = _USB_HOST_HID_REQ_SET_IDLE
+        status = 0
+      end if
+
+  end select
+
+  result = status
+end sub
+
+'///////////////////////////////////////////////////////////////////////////////
+'///////////////////////////////////////////////////////////////////////////////
+'///////////////////////////////////////////////////////////////////////////////
+
+'dim doneFlag as byte                                                          ' Original
+
+
+sub function USBHost_HIDClassOperation() as byte
+dim
+  status as byte volatile 
+  setupRequest as TUSBSetupReq volatile 
+
+  status = _USB_HOST_CLASS_STATUS_BUSY
+  
+  select case (hidClassOperationState)
+    case _HID_STATE_IDLE
+      USBHost_HIDHandlerPtr^.DeviceInit()
+      hidClassOperationState = _HID_STATE_SYNC
+
+    case _HID_STATE_SYNC
+      if (USBHost_GetFrameNumber() mod 2) = 0 then
+        hidClassOperationState = _HID_STATE_GET_DATA
+      end if
+      
+    case _HID_STATE_GET_DATA
+      USBHost_Receive(hidInEPNum, @HIDBuffer, HIDMaxPacketSize)
+      HIDTimer = USBHost_GetFrameNumber()
+      hidClassOperationState = _HID_STATE_POLL
+      doneFlag = 1
+
+    case _HID_STATE_POLL
+      if (USBHost_GetFrameNumber() - HIDTimer) >= HIDbInterval then  
+        hidClassOperationState = _HID_STATE_GET_DATA
+      else 
+        if USBHost_GetTransactionStatus(hidInEPAddress) = _USB_HOST_TRANSACTION_DONE then
+          if doneFlag <> 0 then
+            doneFlag = 0
+            USBHost_HIDHandlerPtr^.ReportReceived(@HIDBuffer)
+          end if
+        else
+          if USBHost_GetTransactionStatus(hidInEPAddress) = _USB_HOST_TRANSACTION_STALL then                                        
+            setupRequest.bmRequest = _USB_HOST_SETUP_REQ_DIR_H2D or _USB_HOST_SETUP_REQ_RECIPIENT_ENDPOINT or _USB_HOST_SETUP_REQ_TYPE_STANDARD
+            setupRequest.bRequest = _USB_HOST_SETUP_REQUEST_CLEAR_FEATURE
+            setupRequest.wValue = 0
+            setupRequest.wIndex = hidInEPNum
+            setupRequest.wLength = 0
+
+            status = USBHost_ControlTransfer(@setupRequest, 0)
+            if status = _USB_HOST_TRANSACTION_DONE then
+              hidClassOperationState = _HID_STATE_GET_DATA
+            end if
+
+          end if
+        end if
+      end if
+  end select
+  
+  result = status
+end sub
+
+'///////////////////////////////////////////////////////////////////////////////
+'///////////////////////////////////////////////////////////////////////////////
+'///////////////////////////////////////////////////////////////////////////////
+
+'// return _USB_HOST_HID_DEVICE_MOUSE or _USB_HOST_HID_DEVICE_KEYB or _USB_HOST_HID_DEVICE_NONE
+sub function USBHost_HIDGetDeviceType() as byte
+  result = hidDeviceType
+end sub
+
+'///////////////////////////////////////////////////////////////////////////////
+'///////////////////////////////////////////////////////////////////////////////
+'///////////////////////////////////////////////////////////////////////////////
+
+sub procedure USBHost_HIDInit()
+
+  hidDeviceType = _USB_HOST_HID_DEVICE_NONE
+  USBHost_RegisterInterfaceInitHandler(@USBHost_HIDClassInitIntf)
+  USBHost_RegisterClassRequestsHandler(@USBHost_HIDClassRequests)
+  USBHost_RegisterClassHandler(@USBHost_HIDClassOperation)
+
+end sub
+
+'///////////////////////////////////////////////////////////////////////////////
+'///////////////////////////////////////////////////////////////////////////////
+'///////////////////////////////////////////////////////////////////////////////
+
+end.
