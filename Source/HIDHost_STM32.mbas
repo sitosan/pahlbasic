@@ -157,7 +157,7 @@ sub function USBHost_HIDClassInitIntf() as byte
                         
       while intfDesc^.bInterfaceSubClass <> _USB_HOST_HID_BOOT_CODE            ' von mir
             intfDesc = USBHost_GetInterfaceDescriptor(_USB_HOST_HID_CFG_INDX)  ' Original
-            delay_us(10)                                                       ' von mir
+            'delay_us(10)                                                       ' von mir
       wend                                                                     ' von mir                                                                                                                                                                                                     ' von mir
 
   'if intfDesc^.bInterfaceSubClass = _USB_HOST_HID_BOOT_CODE then              ' Original

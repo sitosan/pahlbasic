@@ -7,12 +7,12 @@ program ArmBasicV2
 
 'Boards:
 '======================================
-#define 407ZG                                                                  ' alternativ
+'#define 407ZG                                                                  ' alternativ
 '#define 429IG                                                                  ' alternativ
 '#define 407mini                                                                ' alternativ
-'#define 405RG                                                                  ' alternativ
+#define 405RG                                                                  ' alternativ
 '#define VG   ' for the 407mini-Board but with 405RG-Software                   ' zusätzlich zu 405RG (405er Firmware auf F407VG)
-'#define PyBoard                                                                ' zusätzlich zu 405RG (405er Firmware auf PyBoard)
+#define PyBoard                                                                ' zusätzlich zu 405RG (405er Firmware auf PyBoard)
 '#define WeAct                                                                  ' zusätzlich zu 405RG (405er Firmware auf WeAct Studio Board)
 '#define 411                                                                    ' alternativ
 '#define 401                                                                    ' zusätzlich zu 411   (411er Firmware auf F401)
@@ -64,22 +64,22 @@ typedef laststring          as string[128]
 '2.) Konstanten   ==============================================================================================================================
 ' USB-Start-Adress
 #ifdef 407mini then
-const usb_start_adr =0x300
+const usb_start_adr =0x304
 #endif
 
 #ifdef 407ZG then
-const usb_start_adr =0x300
+const usb_start_adr =0x304
 #endif
 
 #ifdef 405RG then
    #ifdef WeAct then
-   const usb_start_adr =0x300                                                  ' WeAct  F405RG
+   const usb_start_adr =0x304                                                  ' WeAct  F405RG
    #endif
    #ifdef Pyboard then
-   const usb_start_adr =0x300                                                  ' PyBoard
+   const usb_start_adr =0x304                                                  ' PyBoard
    #endif
    #ifdef VG then
-   const usb_start_adr =0x300                                                  ' F407mini mit 405er Firmware
+   const usb_start_adr =0x304                                                  ' F407mini mit 405er Firmware
    #endif
 #endif
 
@@ -909,13 +909,13 @@ typedef strelement as string[stringlen]                                        '
 
 '3.) globale Variablen =======================================================================================================================================================================================
 #ifdef 405RG then    ' ===========================================================================405RG========================================
-'MP3                                                                            -------------405RG---------------------------------------------
+'MP3  
+dim soundcard           as word
 #ifdef VG then
 dim MP3_RST             as sbit at GPIOD_ODR.B8
     MP3_CS              as sbit at GPIOD_ODR.B3
     BSYNC               as sbit at GPIOD_ODR.B7
     DREQ                as sbit at GPIOD_IDR.B4
-    sound_card          as word
 #endif
 
 'SD_Card                                                                        --------------405RG--------------------------------------------
@@ -1217,7 +1217,7 @@ DIM
 '    MP3_CS              as sbit at GPIOA_ODR.B10
 '    BSYNC               as sbit at GPIOA_ODR.B8
 '    DREQ                as sbit at GPIOC_IDR.B4
-    soundcard            as word
+dim soundcard            as word
 
 'SD_Card                                                                        --------------411----------------------------------------------
 dim totalClusts,
@@ -4921,7 +4921,7 @@ end sub
 sub procedure sys(dim byref ptext as string, dim hicol as word)                ' System-Meldung normal  hicol: 0=mit NewLine,  1=mit Newline + HiColor
 dim sptr  as ^byte volatile                                                    '                               3=ohne NewLine, 5=keine Farbwerte senden
 dim pchar as byte  volatile                                                    '                               8=immer ohne newline, 9=immer mit newline
-                                                                               '                               mem=0 RAM,  mem=1  ROM
+
     if sys_flag=1 then  exit end if                                            ' System-Meldung unterdrückt?
     if (pmode=1) and (perror=0) and (hicol<8) then  exit end if
     if hicol=1 then
@@ -4987,12 +4987,12 @@ sub procedure uart(dim char_byte as byte)                                      '
            USART2_DR = char_byte                                               ' send Data
            #endif
            
-           #ifdef 405RG then          ' Pyboard/WeAct/VG
+           #ifdef 405RG then         ' Pyboard/WeAct/VG
            while USART2_SR.6=0  wend                                           ' UART2_Tx_Complete?
            USART2_DR = char_byte                                               ' send Data
            #endif
            
-           #ifdef 407mini then        'Mini board
+           #ifdef 407mini then       'Mini board
            while UART4_SR.6=0   wend                                           ' UART4_Tx_Complete?
            UART4_DR = char_byte                                                ' send Data
            #endif
@@ -5004,7 +5004,7 @@ sub procedure uart(dim char_byte as byte)                                      '
       case 4                                                           ' com4
            while USART3_SR.6=0   wend                                          ' UART6_Tx_Complete?
            USART3_DR = char_byte                                               ' send Data
-      #else                           ' Blackpill
+      #else                          ' Blackpill
       
       case 2                                                           ' com2 MIDI/GPS
            while USART2_SR.6=0   wend                                          ' UART2_Tx_Complete?
@@ -5022,7 +5022,7 @@ sub procedure uart(dim char_byte as byte)                                      '
               delay_ms(1)                                                      ' not really necessary but secure:
               FAT32_Write(uart_nr -21, @char_byte, 1)                          ' try again
            end if
-      case 25
+      case 25                                                          ' Nirvana (Null)
       case 31                                                          ' com9 und com1 parallel
            if TFT_started then
               TFT_print_chr(char_byte)                                         ' Umleitung zum LCD
@@ -5063,8 +5063,8 @@ sub function get_uart_pointer as word                                          '
 end sub
 
 sub function wait_uart_receive_finished as word                                ' Warten bis uart-Empfang mehrerer Bytes fertig ist (nichts mehr kommt)
-dim zeiger, zeiger_old as word volatile
-dim registre as longword volatile
+dim zeiger, zeiger_old as word     volatile
+dim registre           as longword volatile
 
     zeiger=0   zeiger_old=0   ticks=0
     while  (zeiger>zeiger_old) or (zeiger=0)                                   ' auf Uart-Antwort warten
@@ -5129,6 +5129,7 @@ sub procedure con(dim char_byte as byte)                                       '
            while testbit(USART2_SR,6)=0  wend                                  ' UART4_Tx_Complete?
            USART2_DR = char_byte                                               ' ins Datenregister
       #endif
+      case 25                                                          ' Null
       case 7,8,9                                                       ' ins TFT LCD schreiben
            TFT_print_chr(char_byte)                                            ' Umleitung zum LCD
       case else perror=13  sys(wrong_int,0)  pr(konsole_uart,5) exit
@@ -6642,13 +6643,13 @@ dim muart as word volatile
        #endif
        if konsole_uart=31 then  
           uart_nr=9
-          print_spaces2(20)   con(13)                                          ' nur auf TFT
+          print_spaces2(20)   uart(13)                                         ' nur auf TFT
           uart_nr=31
        end if
        if mvar=3 then
           uart_nr=NULL                                                         ' Umleitung ins Gerät 25 (Null)
           clear_com0_pointer   perror=0   prompt_flag=1
-          print_spaces2(20)   con(13)                                          ' für Interface31: auch auf Interface 1
+          print_spaces(20)    con(13)                                          ' für Interface31: auch auf Interface 1
           exit
        else
            get_one_konsole_byte
@@ -12689,7 +12690,9 @@ sub procedure init_vars                                                        '
   listcounter=0
   hiliting = true
   modbus_bytes=4
+  #ifndef 411 then
   MIDI_offset=0
+  #endif
 end sub
 
 sub procedure print_line(dim ls as word)                                       ' Programmzeile ausdrucken
@@ -14971,8 +14974,8 @@ dim wordvar as word volatile
       case 224   resultat = extended(get_adc_sample(2))   'extended(ADC_Sample[12])                           ' ad3
       #endif
       case 225   resultat = extended(timecount)                                ' time
-      case 226   resultat = extended(midi_offset)                              ' offset
       #ifndef 411 then
+      case 226   resultat = extended(midi_offset)                              ' offset
       case 227   if seis_bit then                                              ' rand
                     seis_bit=0  RNG_CR.2=0  nop nop  RNG_CR.2=1
                     while  secs_bit=1  wend   
@@ -15688,18 +15691,6 @@ dim wresult as word volatile
                     #else
                     TIM5_CCR3=pwm3
                     #endif
-          #ifndef 411 then
-          case 203  if mresult>100.0 then  mresult=98.0  end if                ' Attack
-                    if mresult<2.0   then  mresult=2.0   end if
-                    attack_factor = pow(1000.0, 1.0/(note_speed*mresult/100.0))
-                    attack = word(mresult)
-                    if (attack + decay) > 100  then
-                       decay = 100 - attack
-                       decay_factor = 1.0/pow(1000.0, 1.0/note_speed*float(decay)/100.0)
-                    end if
-          case 206  if (mresult>100.0) or (mresult<0.0) then  perror=13 exit end if
-                    tr_modulator=g_modulator   tremolo=mresult/100.0           ' Tremolo
-          #endif
           case 204  if (wresult>4) and (wresult<51) then  speed = wresult else  perror=13 end if  ' speed
           #ifndef 407mini then
           case 205  if longword(mresult) > ratio then  perror=13  sys(pwmaufloesg,0)  pr(ratio,5) exit end if  ' PWM4
@@ -15714,16 +15705,6 @@ dim wresult as word volatile
           case 209  if (wresult<2026) or (wresult>2038) then  perror=13 exit end if ' year
                     years=wresult-2000   months=get_months(0)   days=get_days(0)
                     clock_date
-          #ifndef 411 then
-          case 210  if sound_init=1 then  perror=19  sys("Sound active",0) exit end if  ' dac
-                    DAC1_Init(_DAC_CH1_ENABLE)
-                    DAC1_Init(_DAC_CH2_ENABLE)
-                    DAC_CR.0=1    DAC_CR.16=1                                  ' Analog buffer aktivieren
-                    DAC_CR.1=1    DAC_CR.17=1                                  '           "
-                    DAC_CR.2=0    DAC_CR.18=0                                  '           "
-                    if wresult<4096  then  dac = wresult else  dac=4095  end if
-                    DAC_DHR12R1 = dac   DAC_DHR12R2 = dac                      ' rechtsbündig
-          #endif
           case 211  if (wresult>0) and (wresult <= maxerror) then  perror = wresult  end if  ' err
           case 212  if wresult<24  then
                        TFT_font = wresult                                      ' font
@@ -15732,13 +15713,6 @@ dim wresult as word volatile
                     end if
           case 213  gostack = wresult                                          ' stack
           case 215  dptr = longword(mresult)                                   ' read / restore datapointer
-          #ifndef 411 then
-          case 216  if (word(mresult) + attack) > 100  then  perror=13  sys("attack + decay > 100%, attack: ",0)  pr(attack,5) scon("%") exit end if  ' Decay
-                    if mresult>100.0 then  mresult=98.0  end if
-                    if mresult<2.0   then  mresult=2.0   end if
-                    decay_factor = 1.0/pow(1000.0, 1.0/(note_speed*mresult/100.0))
-                    decay = word(mresult)
-          #endif
           case 217  if longword(mresult) > ratio then  perror=13  sys(pwmaufloesg,0) pr(ratio,5) exit end if  ' PWM1
                     pwm1 = longword(mresult)
                     TIM5_CCR1=pwm1
@@ -15752,32 +15726,51 @@ dim wresult as word volatile
           case 219  sys("dow is calculated by system",0) exit                  ' dow
           case 220  if (task_nr<2) and (start_kom_flag=0) then  perror=2  sys(resultstr,0) exit end if
                     func_var_res = mresult                                     ' funktionswert
+          case 225  TIM3_CNT=0   tacks=0   timecount=longword(mresult)         ' time
+          case 228  relay=wresult and relayMask                                ' relay
+          
           #ifndef 411 then
+          case 203  if mresult>100.0 then  mresult=98.0  end if                ' Attack
+                    if mresult<2.0   then  mresult=2.0   end if
+                    attack_factor = pow(1000.0, 1.0/(note_speed*mresult/100.0))
+                    attack = word(mresult)
+                    if (attack + decay) > 100  then
+                       decay = 100 - attack
+                       decay_factor = 1.0/pow(1000.0, 1.0/note_speed*float(decay)/100.0)
+                    end if
+          case 206  if (mresult>100.0) or (mresult<0.0) then  perror=13 exit end if
+                    tr_modulator=g_modulator   tremolo=mresult/100.0           ' Tremolo
+          case 210  if sound_init=1 then  perror=19  sys("Sound active",0) exit end if  ' dac
+                    DAC1_Init(_DAC_CH1_ENABLE)
+                    DAC1_Init(_DAC_CH2_ENABLE)
+                    DAC_CR.0=1    DAC_CR.16=1                                  ' Analog buffer aktivieren
+                    DAC_CR.1=1    DAC_CR.17=1                                  '           "
+                    DAC_CR.2=0    DAC_CR.18=0                                  '           "
+                    if wresult<4096  then  dac = wresult else  dac=4095  end if
+                    DAC_DHR12R1 = dac   DAC_DHR12R2 = dac                      ' rechtsbündig
+          case 216  if (word(mresult) + attack) > 100  then  perror=13  sys("attack + decay > 100%, attack: ",0)  pr(attack,5) scon("%") exit end if  ' Decay
+                    if mresult>100.0 then  mresult=98.0  end if
+                    if mresult<2.0   then  mresult=2.0   end if
+                    decay_factor = 1.0/pow(1000.0, 1.0/(note_speed*mresult/100.0))
+                    decay = word(mresult)
           case 221  if (mresult<1) or (mresult>360) then  perror=13 exit end if  ' Tempo
                     tempo = mresult
                     InitTimer7_for_ADSR
-          #endif
-          case 225  TIM3_CNT=0   tacks=0   timecount=longword(mresult)         ' time
           case 226  if fabs(mresult) >12.0 then  perror=13 exit end if         ' offset
                     MIDI_offset=integer(mresult)
-          case 228  relay=wresult and relayMask                                ' relay
-          #ifndef 411 then
           case 229  if (mresult<0.0) or (mresult>100.0) then  perror=13 exit end if   ' sustain
                     sustain_level = mresult / 100.0
-          #endif
-          #ifndef 411 then
           case 231  if (mresult>100.0) or (mresult<0) then  perror=13 exit end if
                     g_modulator = mresult / 100.0   tr_modulator=g_modulator   ' volume
-          #endif
-          case 232  set_diginp_resistors(wresult,diginpMask)                   ' dig. Eingaenge pullups/pulldowns
-          #ifndef 411 then
-          case 233  if mresult>10000.0 then  perror=13 exit end if             ' Release
+                    case 233  if mresult>10000.0 then  perror=13 exit end if             ' Release
                     if mresult<2.0 then  mresult=2.0 end if
                     release_factor = 1.0/pow(1000.0, 1.0/(note_speed*mresult/100.0))
                     release = word(mresult)
           case 234  if (mresult>100.0) or (mresult<0)then  perror=13 exit end if
                     vb_modulator = TIM4_ARR   vibrato = mresult/111.1          ' Vibrato
           #endif
+          
+          case 232  set_diginp_resistors(wresult,diginpMask)                   ' dig. Eingaenge pullups/pulldowns
           case 235  TIM2_CNT = longword(mresult * 2.0)  TIM2_EGR.0 = 1         ' milli (seconds)
           case 236  select case konsole_uart
                       case 1    ser1_zeiger = wresult
@@ -19712,6 +19705,8 @@ dim   play_buffer                                          as byte[buffer_size] 
     clear_com0_pointer
 end sub
 
+#ifndef WeAct then
+  #ifndef PyBoard then
 sub procedure MP3_Init
 
     BSYNC = 1
@@ -19771,6 +19766,8 @@ dim file_buffer as byte[1024]   volatile
     int2_off   ferror=FAT32_Close(handle)   int2_on
     int2_off   ferror=FAT32_GetError        int2_on
 end sub
+  #endif
+#endif
 
 sub procedure instr_play                                                       ' Anweisung play    2Bytes!!!
 const Read_Mode=0
@@ -19785,7 +19782,13 @@ dim n, anzahlparas, voicenr, mwresultat as word     volatile
     if is_any_str(2) then                                                      ' ab hier play file -------------------------------------------
        mwresultat=w_resultat  w_resultat=0  ml_resultat=l_resultat  l_resultat=0
        if soundcard then
+          #ifndef 411 then
+            #ifndef Weact then
+              #ifndef PyBoard then
           if play_vs1053(SD_Open_File_for_read_write(2, Get_Mode, Read_Mode) ) <0 then  perror=19 exit end if
+              #endif
+            #endif
+          #endif
        else
            if int_marker then  exit end if
            NVIC_IntDisable(IVT_INT_TIM8_UP_TIM13)  CEN_TIM13_CR1_bit=0         ' dds off
@@ -20082,7 +20085,7 @@ end sub
 
 sub procedure uart_input_error
     select case uart_nr
-      case 1,7
+      case 1,7,25
       case 2    #ifdef 411 then
                 if gps_on=1 then  perror=19  sys(" GPS Parsing Is ON",0) exit end if
                 #endif
@@ -20094,7 +20097,7 @@ sub procedure uart_input_error
       #ifndef 411 then
       case 3    if gps_on=1  then  perror=19  sys(" GPS Parsing Is ON",0) exit end if
       case 4    if i2c2_on=1 then  perror=19  sys(" I2C2 is on Serial4-Pins",0) exit end if
-      case 5    if usb1_started=0 then  perror=19  sys(" USB Device Not Started",0) exit end if
+      case 5,30 if usb1_started=0 then  perror=19  sys(" USB Device Not Started",0) exit end if
                 if USBDev_GetDeviceState<>32 then
                    if konsole_uart <> uart_nr then
                       perror=19  sys(" USB Not Ready",0) exit
@@ -20125,7 +20128,7 @@ dim char_byte as  char     volatile
 
     k = calculate_exp(2)
     if perror then  exit end if
-    if (k>24) then  perror=13  sys(wrong_int,0)  pr(k,5) exit end if
+    if (k>32) then  perror=13  sys(wrong_int,0)  pr(k,5) exit end if
     uart_nr = k   if uart_nr=0 then  set_uart_konsole end if
     m = komma2
     if m=0 then  perror=3 exit end if
@@ -25260,7 +25263,7 @@ dim   error                    as short     volatile
     select case test
       case 0
            test=konsole_uart
-      case 1
+      case 1,25
       case 2  #ifdef 405RG then
                  #ifndef VG then
                  if RTC_BKP17R=0 then  perror=19  sys("com2 not configured",0)   exit end if
@@ -25270,7 +25273,7 @@ dim   error                    as short     volatile
       case 3,6
       case 4
            if testbit(RTC_BKP5R,14)=1 then  perror=19  sys("I2C2 On PB10/11",0)  exit end if
-      case 5                                                                   ' USB
+      case 5,30                                                                ' USB
            if usb1_started=0          then  perror=19  sys(usb_dev_nr,0)         exit end if
            if USBDev_GetDeviceState<>32 then
               if konsole_uart <> uart_nr then
@@ -25279,7 +25282,7 @@ dim   error                    as short     volatile
               exit
            end if
       #endif
-      case 7,8,9                                                               ' TFT-LCD
+      case 7,8,9,31                                                            ' TFT-LCD
            if TFT_started=0 then   perror=19  sys(tft_not_ready,0)                    exit end if
            TFT_set_print_mode
            TFT_NL_Max=0   TFT_cursor=0   cret_sup_flag=0
@@ -25330,7 +25333,7 @@ dim test  as longword volatile
     k = get_parameters(2)  if perror then exit end if
     if k=0 then  perror=2  sys("Nothing To Send",0) exit end if
     if int_marker then  k=2 end if
-    if (para[0]<1) or (para[0]>24) then  perror=13  sys(wrong_int,0) exit end if
+    if (para[0]<1) or (para[0]>32) then  perror=13  sys(wrong_int,0) exit end if
     select case para[0]
       #ifdef 405RG then
          #ifndef VG then
@@ -25341,7 +25344,7 @@ dim test  as longword volatile
       #ifndef 411 then
       case 4
            if testbit(RTC_BKP5R,14)=1 then  perror=19  sys("I2C2 On PB10/11",0) exit end if
-      case 5
+      case 5,30
            if usb1_started=0 then  perror=19  sys(usb_dev_nr,0) exit end if
            if USBDev_GetDeviceState<>32 then
               if konsole_uart <> uart_nr then
@@ -25353,7 +25356,7 @@ dim test  as longword volatile
       case 3,4,5,6  
            perror=13  sys(wrong_int,0) exit
       #endif
-      case 7,8,9
+      case 7,8,9,31
            if TFT_started=0 then  perror=19  sys(tft_not_ready,0) exit end if  ' TFT-LCD
     end select
     if (para[0]>9) and (para[0]<21) then                                       ' serielles Flash/EEPROM
@@ -25363,7 +25366,7 @@ dim test  as longword volatile
        test = (dat_nr[para[0] -10] << 16) +65532
        if file_pointer[para[0] -10] > test then  perror=20 exit end if
     end if
-    if para[0]>20 then                                                         ' SD-Card
+    if (para[0]>20) and (para[0]<25) then                                      ' SD-Card
        SPI_Set_Active(@SPI2_Read, @SPI2_Write)
        int2_off  error = FAT32_GetFreeSpace(@freeClusts, @bytesPerCluster)  int2_on
        if error<0      then  perror=19  sys(sd_read_err,0)  pr(FAT32_GetError,5) exit end if
@@ -25375,7 +25378,7 @@ dim test  as longword volatile
         l = byte(para[n])
         uart(l)
     next n
-    if para[0]>20 then int2_on end if
+    if (para[0]>20) and (para[0]<25) then int2_on end if
 end sub
 
 sub procedure instr_put_ohne_raute                                             ' einzelnes Zeichen senden  (instr_put)
@@ -26101,26 +26104,27 @@ dim   pos       as word        volatile
 end sub
 
 sub procedure instr_input_raute                                                ' Anweisung input#   2Byte!!!
-dim k, m, n, l, maxbyte as word        volatile
+dim k, m, n, L, maxbyte as word        volatile
 dim test                as longword    volatile
     charbyte, delimbyte as char        volatile
     zwischenerg         as extended    volatile
     inputstring         as string[256] volatile
-    l = word(calculate_exp(2))   if perror then  exit end if
+    L = word(calculate_exp(2))   if perror then  exit end if
     m = komma2
     n = komma(m)
     k = get_parameters(n)   maxbyte=255   delimbyte=13
     if m=0      then  perror=02  sys(wvariable,0)           exit end if
-    if (l>(24)) then  perror=13  sys(wrong_int,0)  pr(l,5)  exit end if
-    uart_nr=KONSOLE1   inputstring=pstr   n=0
+    if (L>(32)) then  perror=13  sys(wrong_int,0)  pr(l,5)  exit end if
+    uart_nr=L   inputstring=pstr   n=0
     if uart_nr=0 then  set_uart_konsole end if
     select case k
+      case 0    perror=02    sys(parameters,0)          exit
       case 1    if para[0]>0 then  maxbyte   = para[0]  end if
       case 2    if para[0]>0 then  maxbyte   = para[0]  end if
                 if para[1]>0 then  delimbyte = para[1]  end if
     end select
     select case uart_nr
-      case 1,2,3,4,5,6,7,8,9                                                   ' serial communication
+      case 1,2,3,4,5,6,7,8,9,30,31                                             ' serial communication
            if int_marker then  exit end if
            uart_input_error   if perror then  exit end if
            while 1
@@ -27158,9 +27162,7 @@ dim gosubline, pos, put_buf, put_char, pos1, intpin, test, paraz, labellen as  w
                    end if
                    if test then
                       onadres[20 + para[0] -1] = 0
-                      exit
                    end if
-                   if put_buf then  on_put_char_error end if
                 end if
       case 163  paraz = get_parameters(2)                                      ' on clock
                 if pos then
@@ -27192,9 +27194,7 @@ dim gosubline, pos, put_buf, put_char, pos1, intpin, test, paraz, labellen as  w
                                NVIC_IntDisable(IVT_INT_EXTI17_RTC_ALARM)
                                #endif
                    end select
-                   exit
                 end if
-                if put_buf then  on_put_char_error end if
       case 165  if pos then                                                    ' on touch
                    onadres[15] = intpointer
                    setbit(inputdelay_int_on,5)                                 ' Totzeit-Timer ein
@@ -27272,6 +27272,7 @@ dim gosubline, pos, put_buf, put_char, pos1, intpin, test, paraz, labellen as  w
                                NVIC_SetIntPriority(IVT_INT_EXTI4,84)
                      case else perror=13  exit
                    end select
+                   exit
                 end if
                 if test then
                    clearbit(EXTI_IMR,intpin)
@@ -27321,9 +27322,7 @@ dim gosubline, pos, put_buf, put_char, pos1, intpin, test, paraz, labellen as  w
                 if test then
                    AWD_bit=0  AWDEN_BIT=0  AWDSGL_BIT=0  AWDIE_BIT=0           ' Alarm aus, ADC-Watchdog aus, Einzelkanal aus, Interrupt aus
                    onadres[8]=0
-                   exit
                 end if
-                if put_buf then  on_put_char_error end if
       case 225  if pos then                                                    ' on time
                    inttime = longword(calculate_exp(2))
                    if inttime>0 then
@@ -27340,9 +27339,7 @@ dim gosubline, pos, put_buf, put_char, pos1, intpin, test, paraz, labellen as  w
                    timerint=0
                    onadres[5]=0
                    alarmtime=0
-                   exit
                 end if
-                if put_buf then  on_put_char_error end if
       case 235  paraz = get_parameters(2)                                      ' on milli  ##############
                 if pos then                                                    ' aktivieren?
                    if paraz<>2  then  perror=13  sys(parameters,0)  pr(paraz,5) exit end if
@@ -27387,9 +27384,7 @@ dim gosubline, pos, put_buf, put_char, pos1, intpin, test, paraz, labellen as  w
                       TIM11EN_bit=0                                            ' und ausschalten
                       NVIC_IntDisable(IVT_INT_TIM1_TRG_COM_TIM11)              ' sowie interrupt aus
                    end if
-                   exit
                 end if
-                if put_buf then  on_put_char_error end if
       case 31                                                                  ' on com
                 paraz = get_parameters(2)
                 if paraz<1  then  perror=13  sys(parameters,0)  pr(paraz,5) exit end if
@@ -27464,9 +27459,7 @@ dim gosubline, pos, put_buf, put_char, pos1, intpin, test, paraz, labellen as  w
                      case else perror=2  sys(wrong_int,0)
                      #endif
                    end select
-                   exit
                 end if
-                if put_buf then  on_put_char_error end if
       case 211  if pos then                                                    ' on error
                    if onadres[7] then  perror=22  sys(irp_already,0)  exit end if
                    onadres[7] = intpointer
@@ -27476,9 +27469,7 @@ dim gosubline, pos, put_buf, put_char, pos1, intpin, test, paraz, labellen as  w
                 if test then                                                   ' off?
                    onadres[7]=0                                                ' on error löschen
                    onerr=0   sys_flag=0
-                   exit
                 end if
-                if put_buf then  on_put_char_error end if
       case else perror=2  sys("Unknown Token: ",0)  uart(progline[1]) exit
   end select
 end sub
