@@ -11,8 +11,8 @@ program ArmBasicV2
 '#define 429IG                                                                  ' alternativ
 '#define 407mini                                                                ' alternativ
 #define 405RG                                                                  ' alternativ
-'#define VG   ' for the 407mini-Board but with 405RG-Software                   ' zusätzlich zu 405RG (405er Firmware auf F407VG)
-#define PyBoard                                                                ' zusätzlich zu 405RG (405er Firmware auf PyBoard)
+#define VG   ' for the 407mini-Board but with 405RG-Software                   ' zusätzlich zu 405RG (405er Firmware auf F407VG)
+'#define PyBoard                                                                ' zusätzlich zu 405RG (405er Firmware auf PyBoard)
 '#define WeAct                                                                  ' zusätzlich zu 405RG (405er Firmware auf WeAct Studio Board)
 '#define 411                                                                    ' alternativ
 '#define 401                                                                    ' zusätzlich zu 411   (411er Firmware auf F401)
@@ -64,11 +64,11 @@ typedef laststring          as string[128]
 '2.) Konstanten   ==============================================================================================================================
 ' USB-Start-Adress
 #ifdef 407mini then
-const usb_start_adr =0x304
+const usb_start_adr =0x294
 #endif
 
 #ifdef 407ZG then
-const usb_start_adr =0x304
+const usb_start_adr =0x300
 #endif
 
 #ifdef 405RG then
@@ -5046,6 +5046,7 @@ dim n as word  volatile
 end sub
 
 sub function get_uart_pointer as word                                          ' Anzahl Zeichen im UART-Puffer
+    result=0
     select case uart_nr
       case 1,7  result=ser1_zeiger
       case 2    result=ser2_zeiger
@@ -5053,11 +5054,13 @@ sub function get_uart_pointer as word                                          '
       case 4    result=ser4_zeiger
       case 5,9  result=usb_zeiger
       case 8,30 result=ser8_zeiger
-      case 25   result=0
-      case 31   if ser1_zeiger>usb_zeiger then
+      case 25
+      case 31   if ser1_zeiger then
                    result=ser1_zeiger
                 else
-                    result=usb_zeiger
+                    if usb_zeiger then
+                       result=usb_zeiger
+                    end if
                 end if
     end select
 end sub
@@ -6628,7 +6631,6 @@ dim muart as word volatile
        TFT_NL_Cnt=0
        if konsole_uart=31 then  uart_nr=1  unl  uart_nr=31 end if              ' Newline auf Interface 1
        uwt("press a key")   uart(13)
-       if konsole_uart=31 then  uart_nr=1  uart(27)  uart(91)  uart("1")  uart("A")  uart_nr=31 end if  ' Cursor 1 up auf Interface 1
        clear_com0_pointer
        while  ser_zeiger=0   IWDG_KR=0xAAAA  wend
        #ifdef 407ZG then
@@ -6641,17 +6643,21 @@ dim muart as word volatile
           while T_IRRPT=0   IWDG_KR=0xAAAA   delay20   wend                    ' auf Key up warten
        end if
        #endif
-       if konsole_uart=31 then  
-          uart_nr=9
-          print_spaces2(20)   uart(13)                                         ' nur auf TFT
-          uart_nr=31
-       end if
        if mvar=3 then
           uart_nr=NULL                                                         ' Umleitung ins Gerät 25 (Null)
           clear_com0_pointer   perror=0   prompt_flag=1
-          print_spaces(20)    con(13)                                          ' für Interface31: auch auf Interface 1
+          print_spaces(20)   con(13)                                           ' für Interface31: auch auf Interface 1
+          if konsole_uart=31 then
+             konsole_uart=1  con(27)   con(91)   con("1")   con("A")           ' Cursor 1 up auf Interface 1
+             konsole_uart=31
+          end if
           exit
        else
+           if konsole_uart=31 then  
+              konsole_uart=9  print_spaces(20)   con(13)                       ' nur auf TFT
+              konsole_uart=1  con(27)  con(91)   con("1")   con("A")           ' Cursor 1 up auf Interface 1
+              konsole_uart=31
+           end if
            get_one_konsole_byte
            clear_com0_pointer
        end if
@@ -10305,8 +10311,8 @@ dim test as byte volatile
       case 6    if (usb0_started=0) then exit end if                           ' USB Host nicht gestartet
       case 7    if (TFT_started =0) then exit end if                           ' TFT nicht gestartet
       case 9    if (TFT_started =0)  or (usb0_started=0)  then exit end if     ' TFT oder USB Host nicht gestartet
-      case 31   if (TFT_started =0) then konsole_uart = 1      exit end if     ' TFT nicht gestartet
-                if (usb0_started=0) then konsole_uart = 1      exit end if     ' USB Host nicht gestartet
+      case 31   if (TFT_started =0) then test = 1 end if                       ' TFT nicht gestartet
+                if (usb0_started=0) then test = 1 end if                       ' USB Host nicht gestartet
         #ifdef 407ZG then
       case 8    if (TFT_started =0)  or ((keyboard_active=0) and (osk_started<>2)) then exit end if  ' TFT oder Matrix oder OSK nicht gestartet
       case 30   if (usb1_started=0)    then exit end if                        ' USB Device nicht gestartet
@@ -10327,7 +10333,8 @@ dim test as byte volatile
     end select
     snl   sys("continue on interface nbr.: ",5)  pr(test,5)   cnl
     konsole_uart = test   'uart_nr = test
-    if konsole_uart>6 then  tft_cls9  end if
+    if konsole_uart>06 then  tft_cls9  end if
+    if konsole_uart=31 then  vt100_cls end if
 end sub
 
 
@@ -11427,36 +11434,42 @@ end sub
 #endif
 
 sub function get_one_konsole_byte as byte
+    result=0
     select case   konsole_uart
-      case 1,7    result = get_one_byte            ser_zeiger = ser1_zeiger    ' com1
-      case 2      result = get_one_midi_byte       ser_zeiger = ser2_zeiger    ' com2
+      case 1,7    result = get_one_byte             ser_zeiger = ser1_zeiger   ' com1
+      case 2      result = get_one_midi_byte        ser_zeiger = ser2_zeiger   ' com2
       #ifndef 411 then
-      case 3      result = get_one_gps_byte        ser_zeiger = ser3_zeiger    ' com3
-      case 5,6,9  result = get_one_usb_byte        ser_zeiger = usb_zeiger     ' USB-Device, USB-Host
-      case 8,30   result = get_one_matrix_byte     ser_zeiger = ser8_zeiger    ' Matrix
-      case 4      result = get_one_ser4_byte       ser_zeiger = ser4_zeiger    ' com4
-      case 31     if ser1_zeiger>usb_zeiger then                               ' USB-Host + com1
-                     result = get_one_byte         ser_zeiger = ser1_zeiger
+      case 3      result = get_one_gps_byte         ser_zeiger = ser3_zeiger   ' com3
+      case 5,6,9  result = get_one_usb_byte         ser_zeiger = usb_zeiger    ' USB-Device, USB-Host
+      case 8,30   result = get_one_matrix_byte      ser_zeiger = ser8_zeiger   ' Matrix
+      case 4      result = get_one_ser4_byte        ser_zeiger = ser4_zeiger   ' com4
+      case 31     if ser1_zeiger then                                          ' USB-Host + com1
+                     result = get_one_byte          ser_zeiger = ser1_zeiger
                   else
-                      result = get_one_usb_byte    ser_zeiger = usb_zeiger
+                      if usb_zeiger then
+                         result = get_one_usb_byte  ser_zeiger = usb_zeiger
+                      end if
                   end if
       #endif
     end select
 end sub
 
 sub function get_one_uart_byte as byte
+    result=0
     select case   uart_nr
-      case 1,7    result = get_one_byte            ser_zeiger = ser1_zeiger    ' com1
-      case 2      result = get_one_midi_byte       ser_zeiger = ser2_zeiger    ' com2
+      case 1,7    result = get_one_byte              ser_zeiger = ser1_zeiger  ' com1
+      case 2      result = get_one_midi_byte         ser_zeiger = ser2_zeiger  ' com2
       #ifndef 411 then
-      case 3      result = get_one_gps_byte        ser_zeiger = ser3_zeiger    ' com3
-      case 5,6,9  result = get_one_usb_byte        ser_zeiger = usb_zeiger     ' USB-Device, USB-Host
-      case 8,30   result = get_one_matrix_byte     ser_zeiger = ser8_zeiger    ' Matrix
-      case 4      result = get_one_ser4_byte       ser_zeiger = ser4_zeiger    ' com4
-      case 31     if ser1_zeiger>usb_zeiger then                               ' USB-Host + com1
-                     result = get_one_byte         ser_zeiger = ser1_zeiger
+      case 3      result = get_one_gps_byte          ser_zeiger = ser3_zeiger  ' com3
+      case 5,6,9  result = get_one_usb_byte          ser_zeiger = usb_zeiger   ' USB-Device, USB-Host
+      case 8,30   result = get_one_matrix_byte       ser_zeiger = ser8_zeiger  ' Matrix
+      case 4      result = get_one_ser4_byte         ser_zeiger = ser4_zeiger  ' com4
+      case 31     if ser1_zeiger then                                          ' USB-Host + com1
+                     result = get_one_byte           ser_zeiger = ser1_zeiger
                   else
-                      result = get_one_usb_byte    ser_zeiger = usb_zeiger
+                      if usb_zeiger then
+                         result = get_one_usb_byte   ser_zeiger = usb_zeiger
+                      end if
                   end if
       #endif
     end select
