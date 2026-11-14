@@ -1,3 +1,4 @@
+//Funktioniert nicht allein
 //Funktion Kapital
 //Schreibt den mit A ausgewählten Buchstaben gross  
 function Kapital(A$, A)

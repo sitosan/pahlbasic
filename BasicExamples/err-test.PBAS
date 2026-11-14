@@ -12,6 +12,6 @@ proc Loop
 end.
   
 proc Fehlerbehandlung
-  if inkey = 3 then exit. : ' ohne diesen Ausstieg (ctrl + c) ist das Programm kaum abzubrechen
+  if (inkey) = 3 then exit. : ' ohne diesen Ausstieg (ctrl+c) ist das Programm kaum abzubrechen, zuerst Enter dann ctrl+c
   locate 11, 10 : print "Fehler" : wait 2000
 resume "Loop"
