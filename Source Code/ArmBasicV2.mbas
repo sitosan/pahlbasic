@@ -9,11 +9,11 @@ program ArmBasicV2
 
 'Boards:
 '======================================
-'#define 407ZG                                                                  ' alternativ
+#define 407ZG                                                                  ' alternativ
 '#define 429IG                                                                  ' alternativ
 '#define 407mini                                                                ' alternativ
-#define 405RG                                                                  ' alternativ
-#define VG   ' for the 407mini-Board but with 405RG-Software                   ' zusätzlich zu 405RG (405er Firmware auf F407VG)
+'#define 405RG                                                                  ' alternativ
+'#define VG   ' for the 407mini-Board but with 405RG-Software                   ' zusätzlich zu 405RG (405er Firmware auf F407VG)
 '#define PyBoard                                                                ' zusätzlich zu 405RG (405er Firmware auf PyBoard)
 '#define WeAct                                                                  ' zusätzlich zu 405RG (405er Firmware auf WeAct Studio Board)
 '#define 411                                                                    ' alternativ
@@ -70,7 +70,7 @@ typedef laststring          as string[128]
 '2.) Konstanten   ==============================================================================================================================
 ' USB-Start-Adress
 #ifdef 407mini then                                                            ' 407miniBoard   'Basic407'
-const usb_start_adr =0x288
+const usb_start_adr =0x288 '94                                                     ' 288
 #endif
 
 #ifdef 407ZG then                                                              ' F407ZG-Board   'BasicZG'
@@ -868,6 +868,8 @@ const auchCRCLo as char[256] = (0x00, 0xC0, 0xC1, 0x01, 0xC3, 0x03, 0x02, 0xC2, 
   sechzehn       = "16-Bits only"
   waitingfordata = "waiting for data >"
   tomanychars    = "too many characters"
+  notext         = "textarray empty"
+  adress         = "Adress!!!"
 'Fehlermeldungen:
   errorstr as errorelement[maxerror +1] = ("ready", "illegal direct", "syntax error", "expected " +chr(34)+ "=,() or #", "expected 'to'", "next without for", "return without gosub", "expected '='", "line number??", "stack error", "dcf77 or gps ctrl", "not in prog mode", "can't continue", "bad argument", "out of memory", "loop without do", "no program", "no ext. eeprom", "file not found", "hardware", "file too big", "index!", "adress error", "file already exists", "data type mismatch", "file not open", "no read file", "no write file", "file end reached", "no Data File", "filehandler??", "soft break", "user break")
                  '                            0            1                 2               3                                4                   5                    6                     7               8               9                10                   11                12               13                 14             15                16              17                18             19             20          21           22                23                      24                25                26              27                28                 29               30             31            32
@@ -1975,7 +1977,7 @@ sub function  get_one_midi_byte()    as byte  forward
 sub function  get_one_gps_byte()     as byte  forward
 sub function  get_one_konsole_byte() as byte  forward
 sub procedure put_char_in_buffer(dim b_char as char, dim unmbr as word)  forward
-sub procedure put_string_in_buffer(dim byref bstring as string)  forward
+sub procedure put_string_in_konsole_buffer(dim byref bstring as string)  forward
 sub function  wait_gps as word  forward
 'sub procedure check_fletcher(dim first_byte_nr as word, dim last_byte_nr as word) forward
 sub function  gps_komma_pos(dim number as word) as word  forward
@@ -2368,7 +2370,7 @@ sub procedure HIDEventHandler(dim event as byte)  org  0x200
 '    end if
 end sub
 
-sub procedure esc_sequence(dim ctr_char as byte, dim iface as word)            ' Escape Sequence for Matrix-/USB-Keyboard
+sub procedure esc_sequence(dim ctr_char as byte, dim iface as word)            ' Escape Sequence csi for Matrix-/USB-Keyboard
     put_char_in_buffer(27,  iface)
     put_char_in_buffer("[", iface)
     put_char_in_buffer(ctr_char, iface)
@@ -4844,6 +4846,12 @@ sub function Array_read_chr as char                                            '
              if result=0 then                                                  ' Zeilen-Ende-Zeichen?
                 text_pointer=text_pointer + textlineslen                       ' Zeiger auf nächstes Zeichen
                 char_pointer=0
+                if (text_pointer + char_pointer)>=text_laenge then             ' Textende
+                   char_pointer=0xFFFF
+                   result=0
+                else
+                    result=13                                                  ' cr ausgeben
+                end if
              else
                  inc(char_pointer)                                             ' nächstes Zeichen, gleicher String
              end if
@@ -4855,7 +4863,7 @@ sub function Array_read_chr as char                                            '
        end if
     else
         char_pointer=0                                                         ' es werden nur Zeichen gezählt
-        if text_pointer<textmax then                                           ' Speicher-Ende erreicht?
+        if text_pointer<=text_laenge then                                      ' Text-Ende erreicht?
            result=ccm_ram_read_byte(text_pointer)                              ' 1 Zeichen aus CCM-RAM lesen
            if result=0 then                                                    ' Text-Ende-Zeichen?
               char_pointer=0xFFFF                                              ' Text-Ende melden
@@ -4868,6 +4876,19 @@ sub function Array_read_chr as char                                            '
     end if
 end sub
 
+sub procedure esc_on_off(dim echar as char)                                    ' Escape-Sequenz on/off
+    if text_escape_mode=27 then                                                ' eingeleitet?
+       if echar=91 then                                                        ' Start?
+          text_escape_mode=91                                                  ' fortführen
+       else                                                                    ' kein Start, nur Escape???
+           text_escape_mode=0                                                  ' dann wieder beenden
+       end if
+    else
+        if text_escape_mode=91 then                                            ' in der Sequenz?
+           if (echar="m") or (echar="H") then text_escape_mode=0 end if        ' Escape-Sequenz für color$ oder cls$ zu Ende
+        end if
+    end if
+end sub
 
 sub procedure Array_print_chr(dim pchar as char)                               ' 1 Zeichen ins Textarray drucken
     if Text_Split then                                                         ' Texte mit newline werden in einzelne Strings aufgeteilt
@@ -4877,43 +4898,45 @@ sub procedure Array_print_chr(dim pchar as char)                               '
                 ccm_ram_write_byte(pchar, text_pointer + char_pointer)         ' dann speichern
                 inc(char_pointer)                                              ' nächste Zeichenposition
                 text_laenge=text_pointer + char_pointer                        ' Textlänge aktualisieren
-                ccm_ram_write_byte(0, text_pointer + char_pointer)             ' String-Ende
+                ccm_ram_write_byte(0, text_laenge)                             ' String-Ende
              end if
           else
               select case pchar
+                case 0                                                         ' Text-Ende??
+                     char_pointer=0xFFFF
                 case 13                                                        ' Wagenrücklauf=neuer String
                      char_pointer=0
                 case 10                                                        ' nächster String
-                     if text_pointer < textmax then
-                        text_pointer=text_pointer + textlineslen               ' Stringzeiger +1
+                     if text_pointer < textmax then                            ' noch nicht die letzte Zeile?
+                        text_pointer=text_pointer + textlineslen               ' Stringzeiger ++
                         if char_pointer=0 then
-                           ccm_ram_write_byte(0, text_pointer + char_pointer)  ' Zeile-/Text-Ende-Zeichen
+                           ccm_ram_write_byte(0, text_pointer)                 ' Zeile-/Text-Ende-Zeichen
                         else
-                            char_pointer=0xFFFF
+                            char_pointer=0xFFFF                                ' kein Newline???
                         end if
                      else
-                         char_pointer=0xFFFF                                   ' geht nicht
+                         char_pointer=0xFFFF                                   ' passt nicht
                      end if
                 case 27
-                     text_escape_mode=27                                       ' VT100 Color-Sequenz
+                     text_escape_mode=27  exit                                 ' VT100 Color/CLS-Sequenz einleiten
               end select
           end if
        else
-           if pchar="m" then text_escape_mode=0 end if                         ' Escape-Farb-Sequenz zu Ende
+           esc_on_off(pchar)                                                   ' Escape-Sequenz fortführen/beenden
        end if
     else                                                                       ' Text wird durchgehend mit newlines gespeichert
         char_pointer=0
-        if text_escape_mode=0 then                                             ' Farb-Info aus?
+        if text_escape_mode=0 then                                             ' Farb/CLS-Info aus?
            if text_pointer< textmax then
               if pchar=0 then                                                  ' der angebotene Text besteht aus Zeilen mit Null am Ende
                  ccm_ram_write_byte(13, text_pointer)                          ' durch Newlines erstzen
                  inc(text_pointer)
                  ccm_ram_write_byte(10, text_pointer)
                  inc(text_pointer)                                             ' nächste Zeichenposition
-                 text_laenge=text_pointer +2                                   ' Textlänge aktualisieren
+                 text_laenge=text_pointer                                      ' Textlänge aktualisieren
               else                                                             ' nicht Null
-                  if pchar=27 then                                             ' Farbe?
-                     text_escape_mode=27                                       ' entfärben!
+                  if pchar=27 then                                             ' Farbe/CLS?
+                     text_escape_mode=27  exit                                 ' Escape
                   else
                       ccm_ram_write_byte(pchar, text_pointer)                  ' speichern!
                       inc(text_pointer)                                        ' Zeiger +1
@@ -4922,10 +4945,10 @@ sub procedure Array_print_chr(dim pchar as char)                               '
               end if
               ccm_ram_write_byte(0, text_pointer)                              ' Text-Ende-Zeichen
            else
-               char_pointer=0xFFFF
+               char_pointer=0xFFFF                                             ' Array voll
            end if
         else
-            if pchar="m" then text_escape_mode=0 end if                        ' Escape-Farb-Sequenz zu Ende
+            esc_on_off(pchar)                                                  ' Escape-Sequenz fortführen/beenden
         end if
     end if
 end sub
@@ -5175,23 +5198,26 @@ dim n as word  volatile
     for n=1 to anzahl  uart(32)  next n
 end sub
 
-sub function get_uart_pointer as word                                          ' Anzahl Zeichen im UART-Puffer
+sub function get_uart_pointer(dim intfce as word) as word                                          ' Anzahl Zeichen im UART-Puffer
     result=0
-    select case uart_nr
-      case 1,7  result=com1_zeiger
-      case 2    result=com2_zeiger
-      case 3    result=com3_zeiger
-      case 4    result=com4_zeiger
-      case 5,9  result=usb_zeiger
-      case 8,30 result=com8_zeiger
+    select case  intfce
+      case 1,7   result=com1_zeiger
+      case 2     result=com2_zeiger
+      case 3     result=com3_zeiger
+      case 4     result=com4_zeiger
+      case 5,6,9 result=usb_zeiger
+      case 8,30  result=com8_zeiger
       case 25
-      case 31   if com1_zeiger then
-                   result=com1_zeiger
-                else
-                    if usb_zeiger then
-                       result=usb_zeiger
-                    end if
-                end if
+      case 26    if text_split then
+                    result=text_laenge
+                 end if
+      case 31    if com1_zeiger then
+                    result=com1_zeiger
+                 else
+                     if usb_zeiger then
+                        result=usb_zeiger
+                     end if
+                 end if
     end select
 end sub
 
@@ -5215,7 +5241,7 @@ dim registre           as longword volatile
              case 38400   delay300us
              case else    p19 exit
            end select
-           zeiger=get_uart_pointer                                             ' prüfen
+           zeiger=get_uart_pointer(uart_nr)                                             ' prüfen
     wend
     result=zeiger
 end sub
@@ -5447,13 +5473,18 @@ dim mstr as string[256] volatile
 end sub
 
 'VT100 Kommandos
-sub procedure con_esc
+sub procedure con_esc                                                          ' csi Konsole
     con(27)  con("[")
 end sub
 
-sub procedure uart_esc
+sub procedure uart_esc                                                         ' csi Interface
     uart(27)  uart("[")
 end sub
+
+'sub procedure set_terminal_window(dim w_hight, w_with as word)                 ' TeraTerm-Fenster einstellen
+'    con_esc
+'    con("8")  con(";")  con(byte(w_hight) +48)  con(";")  con(byte(w_with) +48)  con("t")
+'end sub
 
 Sub procedure set_konsole_color(dim coleur, intens, hcolor as word)            ' set konsole text foreground colour
     con_esc
@@ -7201,8 +7232,12 @@ const
     Parallel_Set_Index(0x33)                                                   ' set scroll area
     Parallel_Write_Command(0)                                                  ' 0
     Parallel_Write_Command(0)
-    Parallel_Write_Command(0x01)                                               ' 464 (0...463)
-    Parallel_Write_Command(0xD0)
+    Parallel_Write_Command(0x01)
+    if small_font then
+       Parallel_Write_Command(0xD4)                                            ' 468  (480 - 12)
+    else
+        Parallel_Write_Command(0xD0)                                           ' 464  (480 - 16)
+    end if
     Parallel_Write_Command(0)
     Parallel_Write_Command(0)
     GPIOD_BSRR=CS_Hi                                                           ' TFT_CS=1
@@ -7277,8 +7312,12 @@ const
     SPI_Set_Index(0x33)                                                        ' set scroll area
     SPI_Write_Command(0)
     SPI_Write_Command(0)
-    SPI_Write_Command(0x01)                                                    ' 464 (0...463)
-    SPI_Write_Command(0xD0)
+    SPI_Write_Command(0x01)
+    if small_font then
+       SPI_Write_Command(0xD4)                                                 ' 468
+    else
+        SPI_Write_Command(0xD0)                                                ' 464 (0...463)
+    end if
     SPI_Write_Command(0)
     SPI_Write_Command(0)
     GPIOD_BSRR=CS_Hi                                                           ' TFT_CS=1
@@ -10811,26 +10850,31 @@ end sub
 sub function get_one_uart_byte as byte
     result=0
     select case   uart_nr
-      case 1,7    result = get_one_byte              com_zeiger = com1_zeiger  ' com1
-      case 2      result = get_one_midi_byte         com_zeiger = com2_zeiger  ' com2
+      case 1,7    result = get_one_byte                                        ' com1
+      case 2      result = get_one_midi_byte                                   ' com2
       #ifndef 411 then
-      case 3      result = get_one_gps_byte          com_zeiger = com3_zeiger  ' com3
-      case 5,6,9  result = get_one_usb_byte          com_zeiger = usb_zeiger   ' USB-Device, USB-Host
+      case 3      result = get_one_gps_byte                                    ' com3
+      case 5,6,9  result = get_one_usb_byte                                    ' USB-Device, USB-Host
          #ifndef WeAct then
             #ifndef PyBoard then
-      case 8,30   result = get_one_matrix_byte       com_zeiger = com8_zeiger  ' Matrix
+      case 8,30   result = get_one_matrix_byte                                 ' Matrix
             #endif
          #endif
-      case 4      result = get_one_ser4_byte         com_zeiger = com4_zeiger  ' com4
+      case 4      result = get_one_ser4_byte                                   ' com4
+      case 26     result=Array_read_chr
       case 31     if com1_zeiger then                                          ' USB-Host + com1
-                     result = get_one_byte           com_zeiger = com1_zeiger
+                     result = get_one_byte
+                     if konsole_uart=uart_nr then com_zeiger=com1_zeiger end if
                   else
                       if usb_zeiger then
-                         result = get_one_usb_byte   com_zeiger = usb_zeiger
+                         result = get_one_usb_byte
+                         if konsole_uart=uart_nr then com_zeiger=usb_zeiger end if
                       end if
                   end if
+                  exit
       #endif
     end select
+    if uart_nr=konsole_uart then  com_zeiger=get_uart_pointer(uart_nr) end if
 end sub
 
 #ifndef 411 then                                                               ' nict 411
@@ -12287,47 +12331,45 @@ dim n, varflag as word volatile
 end sub
 
 sub procedure put_char_in_buffer(dim b_char as char, dim intrfce_nmbr as word) ' Zeichen (b_char) in Empfangspuffer von Interface #intrfce_nmbr einfügen
-    mvar=b_char   if mvar=3 then  perror=maxerror end if
+    mvar=b_char   if mvar=3 then    perror=maxerror end if
     select case   intrfce_nmbr
-      case 1,7    if com1_zeiger>=fifo1 then  exit end if
-                  recstr1[com1_zeiger]=b_char  inc(com1_zeiger)  com_zeiger=com1_zeiger
-      case 2      if com2_zeiger>=fifo2 then  exit end if
-                  recstr2[com2_zeiger]=b_char  inc(com2_zeiger)  com_zeiger=com2_zeiger
+      case 1,7,31 if com1_zeiger>=fifo1  then  exit end if
+                  recstr1[com1_zeiger]=b_char  inc(com1_zeiger)
+      case 2      if com2_zeiger>=fifo2  then  exit end if
+                  recstr2[com2_zeiger]=b_char  inc(com2_zeiger)
       #ifndef 411 then
-      case 3      if com3_zeiger>=fifo3 then  exit end if
-                  recstr3[com3_zeiger]=b_char  inc(com3_zeiger)  com_zeiger=com3_zeiger
-      case 4      if com4_zeiger>=fifo4 then  exit end if
-                  recstr4[com4_zeiger]=b_char  inc(com4_zeiger)  com_zeiger=com4_zeiger
-      case 5,6,9  if usb_zeiger>=usbfifo then exit end if
-                  recstrusb[usb_zeiger]=b_char  inc(usb_zeiger)  com_zeiger=usb_zeiger
+      case 3      if com3_zeiger>=fifo3   then  exit end if
+                  recstr3[com3_zeiger]= b_char  inc(com3_zeiger)
+      case 4      if com4_zeiger>=fifo4   then  exit end if
+                  recstr4[com4_zeiger]= b_char  inc(com4_zeiger)
+      case 5,6,9  if usb_zeiger>=usbfifo  then  exit end if
+                  recstrusb[usb_zeiger]=b_char  inc(usb_zeiger)
+                  if konsole_uart=31 then  com_zeiger=usb_zeiger exit end if
          #ifndef WeAct then
             #ifndef PyBoard then
       case 8,30   if MX_interface=0 then                                       ' Matrix wird intern verwendet
                      key_ctrl=0
                      mvar8=b_char
-                     if com8_zeiger>=fifo8 then  exit end if
+                     if com8_zeiger>=fifo8 then   exit end if
                      recstr8[com8_zeiger]=b_char  inc(com8_zeiger)
-                     if (konsole_uart=8) or (konsole_uart=30) then  com_zeiger=com8_zeiger end if
-                     if onbuf8=1 then
-                        int_helper(25)                                         ' Interrupt-Nr.
+                     if (konsole_uart=8) or (konsole_uart=30) then  
+                        com_zeiger=com8_zeiger
+                        if onbuf8=1 then
+                           int_helper(25)                                      ' Interrupt-Nr.
+                        end if
                      end if
                   else                                                         ' Matrix als externes Keyboard
                       uart_nr=MX_interface  uart(b_char)
                   end if
+                  exit
             #endif
          #endif
-      case 31     if com1_zeiger>=fifo1  then exit end if
-                  if usb_zeiger>=usbfifo then exit end if
-                  if com1_zeiger>usb_zeiger then
-                     recstr1[com1_zeiger]=b_char  inc(com1_zeiger)  com_zeiger=com1_zeiger
-                  else
-                      recstrusb[usb_zeiger]=b_char  inc(usb_zeiger)  com_zeiger=usb_zeiger
-                  end if
       #endif
     end select
+    if intrfce_nmbr=konsole_uart then  com_zeiger=get_uart_pointer(intrfce_nmbr) end if  ' für inputstr  Zeilen-Editor
 end sub
 
-sub procedure put_string_in_buffer(dim byref bstring as string)                ' String in Empfangspuffer einfügen
+sub procedure put_string_in_konsole_buffer(dim byref bstring as string)        ' String in Empfangspuffer einfügen
 dim n as word volatile
 
     n=0
@@ -12337,14 +12379,14 @@ dim n as word volatile
     wend
 end sub
 
-sub procedure put_listline_in_buffer                                           ' Programmzeile in Empfangspuffer
+sub procedure put_listline_in_konsole_buffer                                   ' Programmzeile in Empfangspuffer
     pstr = listline[actual_line]                                               ' listline zum Bearbeiten in pstr
     spaces_to_tabs(9, 2)
     xchange_char(32,11)
     nospaces
     xchange_char(11,32)
     listline[actual_line] = pstr                                               ' fertig bearbeitet
-    put_string_in_buffer(listline[actual_line])                                ' in Empfangspuffer
+    put_string_in_konsole_buffer(listline[actual_line])                        ' in Empfangspuffer
 end sub
 
 sub procedure vt100_save_pos
@@ -12544,7 +12586,7 @@ while true
                    end if
                    if listzeiger>0 then
                       actual_line=listzeiger -1                                ' Zeiger auf letzte Eingabe
-                      put_listline_in_buffer
+                      put_listline_in_konsole_buffer
                       xcounter=0
                    end if
                 end if
@@ -12572,7 +12614,7 @@ while true
              if svar=10 then                                                   ' ctrl J  CLS
                 if noflag then
                    zeiger=0  n=0  m=0  xcounter=0
-                   put_string_in_buffer(@eingabe)
+                   put_string_in_konsole_buffer(@eingabe)
                    memset(@eingabe, 0, 256)
                    if konsole_uart>7 then
                       tft_cls9
@@ -12642,7 +12684,7 @@ while true
               if ctrlflag=6 then                                               ' Funktionstasten
                  ctrlflag=0                                                    ' Ende Escape-Sequenz für function keys zu Ende
                  if svar=126 then
-                    put_string_in_buffer(function_key_text)
+                    put_string_in_konsole_buffer(function_key_text)
                  end if
                  continue
               end if
@@ -12741,7 +12783,7 @@ while true
                                    memset(@eingabe[0],0,256)
                                    clear_konsole_buffer
                                    n=0
-                                   put_listline_in_buffer
+                                   put_listline_in_konsole_buffer
                                    xcounter=0
                                 end if
                              end if
@@ -12764,7 +12806,7 @@ while true
                                       memset(@eingabe[0],0,256)
                                       n=0
                                       clear_konsole_buffer
-                                      put_listline_in_buffer
+                                      put_listline_in_konsole_buffer
                                       xcounter=0
                                    end if
                                 end if
@@ -14742,10 +14784,12 @@ dim mstring as string[32]  volatile
                 resultat = extended(prgnr)                                     ' Programm-Nr.
       case 201
                 resultat = extended(RTC_BKP8R)                                 ' Konfigurationen: Konsole-Nr., USB-Delay, PWMs, Analog-Inputs
+      case 203
+                resultat = extended(Text_Array_Start)                          ' Adresse des Textarrays
       case 204
                 resultat = extended(text_split)                                ' Array-Text gesplittet=1, am Stück=0
       case 205
-                resultat = extended(text_laenge)                               ' Text-Array T() -Länge
+                resultat = extended(text_laenge)                               ' Text-Array T() Text-Länge
       case 206
                 resultat = extended(longword(@MX_Switch[0]))                   ' Adresse des Konfigurations-Bytes für MX-Decodergrösse  64 Bytes=0   128 Bytes=255
       case 207
@@ -15315,7 +15359,7 @@ dim tst      as word     volatile
       #ifndef 411 then
       case "Z"  clear_bkpram
       case "S"  clear_soundbuffer
-      case "T"  clear_Tarray                                                   ' Textarray
+      case "T"  clear_Tarray   text_escape_mode=0                              ' Textarray
                 if get_parameters(4) then text_split=testbit(para[0],0) end if   ' Text gesplittet oder 'am Stück'
       #endif
       case "L"  clear_leds                                                     ' LED Array L()
@@ -19516,6 +19560,7 @@ sub procedure uart_input_error
                 end if
       case 8    if keyboard_active=0 then  p19  swtnl(MX_not_rdy) exit end if
                 MX_interface=0
+      case 26   if text_laenge=0 then  p19  swtnl(notext) exit end if
       #else
       case 3,4,5,6,8,9
                 p19 exit
@@ -19537,21 +19582,21 @@ dim char_byte as  char     volatile
     m = komma2
     if m=0 then  p03 exit end if
     k = get_var_adr_list(m)
-    if k=0 then  p02  swtnl(" Variables List Empty") exit end if
-    if int_marker then  if (uart_nr<10) or (uart_nr>25) then  k=1 end if  end if                 ' in Interrupts nur 1 Zeichen
+    if k=0        then  p02  swtnl(" Variables List Empty")         exit end if
+    if int_marker then  if (uart_nr<10) or (uart_nr>31) then  k=1 end if end if  ' in Interrupts nur 1 Zeichen
     for n=0 to k -1
         select case uart_nr
           case 1,2,3,4,5,6,7,8,9,31,30
                uart_input_error  if perror then  exit end if
                if int_marker=0 then
-                  while get_uart_pointer=0                                     ' auf ein Zeichen von RS232 warten
+                  while get_uart_pointer(uart_nr)=0                            ' auf ein Zeichen von RS232 warten
                         IWDG_KR=0xAAAA
                         if mvar=3 then  exit end if
                   wend
                end if
                select case para[n]
                  case 1    varadr = longword(par[n])  varadr^ = extended(get_one_uart_byte)
-                 case 2    stradr = longword(par[n])  stradr^ = get_one_uart_byte   inc(stradr)  stradr^ = 0
+                 case 2    stradr = longword(par[n])  stradr^ = get_one_uart_byte  inc(stradr)  stradr^ = 0
                  case else p24 exit
                end select
           case 10,11,12,13,14,15,16,17,18,19,20                                ' Flash Chip
@@ -19577,7 +19622,18 @@ dim char_byte as  char     volatile
                            stradr = longword(par[n])  stradr^ = char_byte  inc(stradr)   stradr^ = 0
                  case else p24 exit
                end select
-          case else  p13  swtnl(wrong_int)  spr(uart_nr) exit
+          case 26                                                              ' Textarray T()
+               if text_laenge=0 then  p19  swtnl(notext) exit end if
+               char_byte=get_one_uart_byte
+               if text_split then
+                  if char_byte=13 then  char_byte=0 end if
+               end if
+               select case para[n]
+                 case 1    varadr = longword(par[n])  varadr^ = extended(word(char_byte))
+                 case 2    stradr = longword(par[n])  stradr^ = char_byte  inc(stradr)  stradr^ = 0
+                 case else p24 exit
+               end select
+          case else  p13   swtnl(wrong_int)  spr(uart_nr) exit
         end select
     next n
 end sub
@@ -22224,6 +22280,7 @@ dim   error, fhandler                                          as  short        
        programming_end = progsize     prgnr=198            pstr = mpstr
        set_RAM_adress
        if pmode=1    then  cwtnl(startmeldung)  c_txt(@progname_lokal)  progpointer = -1  prog_end = progend -3  end if
+       result=progsize
        exit
     end if
     if (mode=Type_PBAS) or (mode=Type_INC2) then                               ' DateiTyp '.PBAS' oder '.INC' (geladenes .INC)
@@ -22918,6 +22975,7 @@ dim prgname                 as string[96]  volatile
     test1 = file_ext_test
     if test1<12 then  p13  swtnl("only '.BIN' is supported") exit end if
     bytes=SD_Load_Prg(12, 0, 0, 0, longword(par[0]))
+    if longword(par[0])= Text_Array_Start then text_laenge=bytes end if        ' Textarray?
     progname=prgname
 end sub
 
@@ -23583,7 +23641,7 @@ dim mod_adress     as byte       volatile
              IWDG_KR=0xAAAA
              ticks=0
              if mvar=3 then  exit end if
-             if get_uart_pointer then                                          ' Kommando-Schleife
+             if get_uart_pointer(uart_nr) then                                 ' Kommando-Schleife
                 if ticks>10 then  p13  swtnl("timeout")  break end if
                 mod_buffer[n]=get_one_uart_byte
                 if n=0 then
@@ -23826,20 +23884,20 @@ dim comp_buffer       as char[16] volatile                                     '
     muart=uart_nr   uart_nr=word(para[0]) 
     send_direction
     #ifdef 407mini then
-    if (para[1] <1) or (para[1] > 32)    then  p13  swtnl("Adresse!!!")           exit end if ' BUS-Adresse
+    if (para[1] <1) or (para[1] > 32)    then  p13  swtnl(adress)                 exit end if ' BUS-Adresse
     #endif
     #ifdef 411 then
-    if (para[1] <1) or (para[1] > 32)    then  p13  swtnl("Adresse!!!")           exit end if ' BUS-Adresse
+    if (para[1] <1) or (para[1] > 32)    then  p13  swtnl(adress)                 exit end if ' BUS-Adresse
     #endif
     #ifdef 405RG then
        #ifdef VG then
-       if (para[1] <1) or (para[1] > 64) then  p13  swtnl("Adresse!!!")           exit end if ' BUS-Adresse
+       if (para[1] <1) or (para[1] > 64) then  p13  swtnl(adress)                 exit end if ' BUS-Adresse
        #else
-       if (para[1] <1) or (para[1] > 32) then  p13  swtnl("Adresse!!!")           exit end if ' BUS-Adresse
+       if (para[1] <1) or (para[1] > 32) then  p13  swtnl(adress)                 exit end if ' BUS-Adresse
        #endif
     #endif
     #ifdef 407ZG then
-    if (para[1] <1) or (para[1] > 96)    then  p13  swtnl("Adresse!!!")           exit end if ' BUS-Adresse
+    if (para[1] <1) or (para[1] > 96)    then  p13  swtnl(adress)                 exit end if ' BUS-Adresse
     #endif
     mod_adr=byte(para[1])   mod_buffer[0]=mod_adr   mod_buffer[1]=mod_func
     mod_pointer=@mod_buffer   mod_buffer[2]=00
@@ -23989,7 +24047,11 @@ dim   n, m, output as word volatile
        set_tgl_bit(2,reset_mode)                                               ' Bit reset
        exit                                                                    ' fertig
     end if
+' der ganze Rest
     select case progline[2]
+           case 25   char_pointer=0  text_pointer=0  text_escape_mode=0        ' Textarray:  reset T(), Textlaenge
+                     n=word(calculate_exp(5))
+                     if (n>0) and (n<16384) then  text_laenge=n end if
            case 22   set_tgl_bit(2,reset_mode)                                 ' Bit reset
            case "H"  init_hardware
            case 228  m = get_parameters(3)                                     ' relay
@@ -24087,7 +24149,6 @@ dim   n, m, output as word volatile
                      sound_off  
                      #endif
                      int_off_wo_timer3  release_interrupts  clear_int_stack  swtnl("OK")
-           '#ifndef 405RG then
            case 232  if progline[3]="6" then                                   ' diginp 6
                         CEN_TIM9_CR1_bit=0
                         NVIC_IntDisable(IVT_INT_TIM1_BRK_TIM9)                 ' Timer9 aus
@@ -24157,7 +24218,6 @@ dim   n, m, output as word volatile
                      else
                          p02   swtnl("Input 6 ??")                             ' funktioniert nur mit Eingang 7
                      end if
-           '#endif
            case else p02  swtnl(uparam)  spr(progline[2])
     end select
 end sub
@@ -25511,6 +25571,7 @@ dim test                as longword    volatile
     charbyte, delimbyte as char        volatile
     zwischenerg         as extended    volatile
     inputstring         as string[256] volatile
+    
     L = word(calculate_exp(2))   if perror then  exit end if
     m = komma3  'prn(M)
     n = komma(m)   'prn(n)
@@ -25531,7 +25592,7 @@ dim test                as longword    volatile
            while 1
                  IWDG_KR=0xAAAA
                  if mvar=3 then  exit end if
-                 if get_uart_pointer>0 then
+                 if get_uart_pointer(uart_nr)>0 then
                     charbyte=get_one_uart_byte
                     if charbyte=delimbyte then  break end if
                     pstr[n]=charbyte
@@ -25580,6 +25641,13 @@ dim test                as longword    volatile
            int2_off  if FAT32_Read(uart_nr -21, @SD_Card_Buffer, 1) < 0 then  p19  int2_on  swtnl(sd_read_err)  spr(FAT32_GetError) exit end if
            int2_on
            if SD_Card_Buffer[0] <>29 then  p19  swtnl(stringformat) exit end if  ' Separator-Zeichen?
+      case 26                                                                  ' Textarray T()
+           if text_laenge=0 then  p19  swtnl(notext) exit end if
+           do
+                charbyte=get_one_uart_byte
+                if charbyte>31 then  pstr[n]=charbyte  inc(n) end if
+           loop until (charbyte=13) or (char_pointer=0xFFFF) or (n>127)
+           pstr[n]=0
       case else  p13  swtnl(wrong_int)  spr(uart_nr)  exit
     end select
     #ifndef 411 then
@@ -26037,26 +26105,22 @@ end sub
 
 sub procedure print_textarray
 dim pr_chr as char volatile
-dim lz     as word volatile
 
-    char_pointer=0   text_pointer=0   lz=0                                     ' Text-Array-Print-Zeiger
+    char_pointer=0   text_pointer=0                                            ' Text-Array-Print-Zeiger
     TFT_set_print_mode                                                         ' VT100-Reste neutralisieren
     if tft_scroll_mode=0 then  tft_cls(0) end if                               ' TFT kann nicht scrollen? dann löschen
     TFT_redirect_cls(1)                                                        ' Umleiten
     if text_split then                                                         ' Text ist in einzelne Strings aufgeteilt
        while char_pointer<0xFFFF
              pr_chr=array_read_chr                                             ' aus Array lesn
-             if pr_chr=0 then                                                  ' String-Ende?
-                if lz=0 then                                                   ' 1.Nullzeichen?
-                   unl                                                         ' dann Newline drucken
-                end if
-                inc(lz)                                                        ' weitere Null-Zeichen ignorieren
+             if pr_chr=0 then exit end if
+             if pr_chr=13 then                                                 ' String-Ende?
+                unl
              else
                  if pr_chr > 31 then                                           ' druckbares Zeichen?
-                    uart(pr_chr)  lz=0                                         ' drucken!
+                    uart(pr_chr)                                               ' drucken!
                  end if
              end if
-             if (text_pointer + char_pointer) >= text_laenge then exit end if  ' Text-Ende erreicht?
        wend
     else                                                                       ' Text ist durchgehend mit Newlines gespeichert
         while char_pointer<0xFFFF                                              ' das ist einfach:
@@ -27089,7 +27153,7 @@ const noclear= -1                                                              '
     prog_list(noprint)                                                         ' in listline 'drucken' nicht auf den Schirm
     get_listline                                                               ' vorherige
     if listline[actual_line][0]=0 then  perror=8 exit end if                   ' wurde 'gedruckt'?  nein? -> Fehler
-    put_listline_in_buffer                                                     ' Listing in Eingabe-Puffer
+    put_listline_in_konsole_buffer                                             ' Listing in Eingabe-Puffer
     inputstr(noclear)                                                          ' Zeilen-Editor
     tokenization(normal)
     store_line
@@ -27383,8 +27447,19 @@ dim error            as short    volatile
     if progline[2] = "#" then                                                  ' Dateizeiger?
        anzl = get_parameters(3)
        lange = word(para[0])                                                   ' Filehandler
-       if (lange<10) or (lange>24)   then  p13  swtnl(wrong_int)       exit end if
+       if (lange<10) or (lange>26)   then  p13  swtnl(wrong_int)       exit end if
        if anzl=1 then  seekpos=0     else  seekpos = longword(par[1])       end if
+       if lange=26 then
+          if text_laenge=0       then  p19  swtnl(notext) exit end if
+          if seekpos>text_laenge then  p13                exit end if
+          if text_split then
+             text_pointer=seekpos mod 128
+             char_pointer=seekpos-(text_pointer*128)
+          else
+              text_pointer=seekpos   char_pointer=0
+          end if
+          exit
+       end if
        if lange<21 then                                                        ' serielles Flash/EEPROM
           if dat_nr[lange -10] = 0   then  perror=25 exit end if               ' Datei nicht vorhanden?
           if eeprom=0 then                                                     ' Flash?
@@ -28185,7 +28260,6 @@ end sub
 
 
 main:                                                                          ' Hauptprogramm Warmstart vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-
 
 init_hardware  delay15   clear_all   clear_prog                                ' Hardware initialisieren, "new" ausführen
 swtnl(versionmeldung)                                                          ' Startmeldung auf Konsole ausgeben
